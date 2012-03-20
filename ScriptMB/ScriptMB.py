@@ -39,90 +39,162 @@ class ScriptMBWidget:
     # Instantiate and connect widgets ...
     
     # Collapsible button
-    dummyCollapsibleButton = ctk.ctkCollapsibleButton()
-    dummyCollapsibleButton.text = "A collapsible tab"
-    self.layout.addWidget(dummyCollapsibleButton)
+    __collapsibleButton = ctk.ctkCollapsibleButton()
+    __collapsibleButton.text = "A collapsible tab"
+    self.layout.addWidget(__collapsibleButton)
 
-    # Layout within the dummy collapsible button
-    dummyFormLayout = qt.QFormLayout(dummyCollapsibleButton)
-
-    # GrayModel button
-    grayModelButton = qt.QPushButton("Gray Scale Model Maker")
-    grayModelButton.toolTip = "Apply the module 'Gray Scale Model Maker' on the volume MRHead. MRHead shoudl be already loaded."
-    dummyFormLayout.addWidget(grayModelButton)
-    grayModelButton.connect('clicked(bool)', self.onGrayModelButtonClicked)
+    # Layout within the collapsible button
+    __formLayout = qt.QFormLayout(__collapsibleButton)
 
     # Fixed Volume Selector
-    fixedVolumeSelector = slicer.qMRMLNodeComboBox()
-    fixedVolumeSelector.objectName = 'fixedVolumeSelector'
-    fixedVolumeSelector.toolTip = "The fixed image for registration."
-    fixedVolumeSelector.nodeTypes = ['vtkMRMLVolumeNode']
-    fixedVolumeSelector.noneEnabled = True
-    fixedVolumeSelector.addEnabled = False
-    fixedVolumeSelector.removeEnabled = False
-    #fixedVolumeSelector.connect('currentNodeChanged(bool)', self.enableOrDisableCreateButton)
-    dummyFormLayout.addRow("Fixed Volume:", fixedVolumeSelector)
-    self.parent.connect('mrmlSceneChanged(vtkMRMLScene*)', fixedVolumeSelector, 'setMRMLScene(vtkMRMLScene*)')
+    __fixedVolumeSelector = slicer.qMRMLNodeComboBox()
+    __fixedVolumeSelector.objectName = 'fixedVolumeSelector'
+    __fixedVolumeSelector.toolTip = "The fixed image for registration."
+    __fixedVolumeSelector.nodeTypes = ['vtkMRMLVolumeNode']
+    __fixedVolumeSelector.noneEnabled = True
+    __fixedVolumeSelector.addEnabled = False
+    __fixedVolumeSelector.removeEnabled = False
+    __formLayout.addRow("Fixed Volume:", __fixedVolumeSelector)
+    self.parent.connect('mrmlSceneChanged(vtkMRMLScene*)', __fixedVolumeSelector, 'setMRMLScene(vtkMRMLScene*)')
 
     # Moving Volume Selector
-    movingVolumeSelector = slicer.qMRMLNodeComboBox()
-    movingVolumeSelector.objectName = 'movingVolumeSelector'
-    movingVolumeSelector.toolTip = "The moving image for registration."
-    movingVolumeSelector.nodeTypes = ['vtkMRMLVolumeNode']
-    movingVolumeSelector.noneEnabled = True
-    movingVolumeSelector.addEnabled = False
-    movingVolumeSelector.removeEnabled = False
-    #movingVolumeSelector.connect('currentNodeChanged(bool)', self.enableOrDisableCreateButton)
-    dummyFormLayout.addRow("Moving Volume:", movingVolumeSelector)
-    self.parent.connect('mrmlSceneChanged(vtkMRMLScene*)', movingVolumeSelector, 'setMRMLScene(vtkMRMLScene*)')
+    __movingVolumeSelector = slicer.qMRMLNodeComboBox()
+    __movingVolumeSelector.objectName = 'movingVolumeSelector'
+    __movingVolumeSelector.toolTip = "The moving image for registration."
+    __movingVolumeSelector.nodeTypes = ['vtkMRMLVolumeNode']
+    __movingVolumeSelector.noneEnabled = True
+    __movingVolumeSelector.addEnabled = False
+    __movingVolumeSelector.removeEnabled = False
+    __formLayout.addRow("Moving Volume:", __movingVolumeSelector)
+    self.parent.connect('mrmlSceneChanged(vtkMRMLScene*)', __movingVolumeSelector, 'setMRMLScene(vtkMRMLScene*)')
     
 
     # Register button
-    registerButton = qt.QPushButton("Register")
-    registerButton.toolTip = "Register the volumes."
-    dummyFormLayout.addWidget(registerButton)
-    registerButton.connect('clicked(bool)', self.onRegisterButtonClicked)
+    __registerButton = qt.QPushButton("Register volumes")
+    __registerButton.toolTip = "Register the volumes."
+    __registerStatus = qt.QLabel('Register volumes')
+    __formLayout.addRow(__registerStatus, __registerButton)
+    __registerButton.connect('clicked(bool)', self.onRegisterButtonClicked)
+
+    # Subtract button
+    __subtractButton = qt.QPushButton("Subtract volumes")
+    __subtractButton.toolTip = "Subtract the volumes."
+    __subtractStatus = qt.QLabel('Subtract volumes')
+    __formLayout.addRow(__subtractStatus, __subtractButton)
+    __subtractButton.connect('clicked(bool)', self.onSubtractButtonClicked)
     
     
     # Add vertical spacer
     self.layout.addStretch(1)
 
     # Set local var as instance attribute
-    self.grayModelButton = grayModelButton
-    self.fixedVolumeSelector = fixedVolumeSelector
-    self.movingVolumeSelector = movingVolumeSelector
-    self.registerButton = registerButton
-    
-
-  def onGrayModelButtonClicked(self):
-    #slicer.util.loadVolume("/home/mariana/thesis/volumes/first_batch/patient1-us1/test.dcm")
-    # Once loaded, obtain the Node
-    n = getNode('MRHead')
-    parameters = {}
-    parameters["InputVolume"] = n.GetID()
-    outModel = slicer.vtkMRMLModelNode()
-    slicer.mrmlScene.AddNode( outModel )
-    parameters["OutputGeometry"] = outModel.GetID()
-
-    parameters["Threshold"] = 70
-    
-    grayMaker = slicer.modules.grayscalemodelmaker
-    slicer.cli.run(grayMaker, None, parameters)
-
+    self.__fixedVolumeSelector = __fixedVolumeSelector
+    self.__movingVolumeSelector = __movingVolumeSelector
+    self.__registerButton = __registerButton
+    self.__registerStatus = __registerStatus
+    self.__subtractButton = __subtractButton
+    self.__subtractStatus = __subtractStatus
+   
 
   def onRegisterButtonClicked(self):
-    fixedVolume = self.fixedVolumeSelector.currentNode()
-    movingVolume = self.movingVolumeSelector.currentNode()
-   
+    scene = slicer.mrmlScene
+    
+    fixedVolume = self.__fixedVolumeSelector.currentNode()
+    movingVolume = self.__movingVolumeSelector.currentNode()
+    
     brainsWarp = slicer.modules.brainsdemonwarp
-
-   
+    
     parameters = {}
-    parameters["movingVolume"] = movingVolume.GetID()
-    parameters["fixedVolume"] = fixedVolume.GetID()
-    outputVolume = slicer.vtkMRMLModelNode()
-    slicer.mrmlScene.AddNode(outputVolume)
+    # TODO remove the automatic loading and leave this one
+    #parameters["movingVolume"] = movingVolume.GetID()
+    #parameters["fixedVolume"] = fixedVolume.GetID()
+
+    # Only for testing. Load volumes automatically
+    # TODO Remove when out of testing
+    vols = self.loadVolumesForTesting()
+    fixedVolume = vols["fixedVolume"]
+    movingVolume = vols["movingVolume"]
+    parameters["movingVolume"] = movingVolume
+    parameters["fixedVolume"] = fixedVolume
+    
+    # Create an output volume
+    outputVolume = slicer.vtkMRMLScalarVolumeNode()
+    outputVolume.SetModifiedSinceRead(1)
+    
+    outputVolume.SetName('registered_volume')
+   
+    scene.AddNode(outputVolume) # Important before GetID()!
     parameters["outputVolume"] = outputVolume.GetID()
-   
-    slicer.cli.run(brainsWarp, None, parameters)
-   
+
+    print "Calling register volumes CLI..."
+    self.__cliNode = None
+    self.__cliNode = slicer.cli.run(brainsWarp, self.__cliNode, parameters)
+    
+    # Each time the event is modified, the function processSubtractCompletion will be called.
+    self.__cliObserverTag = self.__cliNode.AddObserver('ModifiedEvent', self.processRegistrationCompletion)
+    self.__registerStatus.setText('Wait ...')
+    self.__registerButton.setEnabled(0)
+
+
+  def processRegistrationCompletion(self, node, event):
+    status = node.GetStatusString()
+    self.__registerStatus.setText('Registration '+status)
+
+    if status == 'Completed':
+      print "Register volumes CLI finished!!"
+      self.__registerButton.setEnabled(1)
+      
+    
+    
+  def onSubtractButtonClicked(self):
+    scene = slicer.mrmlScene
+    subtractmodule = slicer.modules.subtractscalarvolumes
+
+    vols = self.loadVolumesForTesting()
+    fixedVolume = vols["fixedVolume"]
+    movingVolume = vols["movingVolume"]
+    
+    parameters = {}
+    parameters["inputVolume1"] = fixedVolume
+    parameters["inputVolume2"] = movingVolume
+
+    outputVolume = slicer.vtkMRMLScalarVolumeNode()
+    outputVolume.SetModifiedSinceRead(1)
+    outputVolume.SetName('subtracted_volume')
+    scene.AddNode(outputVolume) # Important before GetID()!
+    
+    parameters["outputVolume"] = outputVolume.GetID()
+
+    print "Calling subtract volumes CLI..."
+    self.__cliNode = None
+    self.__cliNode = slicer.cli.run(subtractmodule, self.__cliNode, parameters)
+
+    # Each time the event is modified, the function processSubtractCompletion will be called.
+    self.__cliObserverTag = self.__cliNode.AddObserver('ModifiedEvent', self.processSubtractCompletion)
+    self.__subtractStatus.setText('Wait ...')
+    self.__subtractButton.setEnabled(0)
+
+
+  def processSubtractCompletion(self, node, event):
+    status = node.GetStatusString()
+    self.__subtractStatus.setText('Subtract '+status)
+
+    if status == 'Completed':
+      print "Subtract volumes CLI finished!!"
+      self.__subtractButton.setEnabled(1)
+      
+
+      
+  def loadVolumesForTesting(self):
+    fixedV = slicer.util.loadVolume("/home/mariana/thesis/volumes/first_batch/patient1-us1/test.dcm")
+    movingV = slicer.util.loadVolume("/home/mariana/thesis/volumes/first_batch/patient1-us2/test.dcm")
+
+    fixedN = getNode('test')
+    movingN = getNode('test_1')
+
+    volumes = {}
+    volumes["fixedVolume"] = fixedN
+    volumes["movingVolume"] = movingN
+
+    return volumes
+    
