@@ -102,7 +102,9 @@ class ScriptMBWidget:
     fixedVolume = self.__fixedVolumeSelector.currentNode()
     movingVolume = self.__movingVolumeSelector.currentNode()
     
-    brainsWarp = slicer.modules.brainsdemonwarp
+    brainsWarp = slicer.modules.brainsdemonwarp # takes forever!
+    brainsFit = slicer.modules.brainsfit # Tested during Image Analysis II. Takes about 20mins
+    bsplinedeformable = slicer.modules.bsplinedeformableregistration # Tested during Image Analysis II
     
     parameters = {}
     # TODO remove the automatic loading and leave this one
@@ -116,6 +118,10 @@ class ScriptMBWidget:
     movingVolume = vols["movingVolume"]
     parameters["movingVolume"] = movingVolume
     parameters["fixedVolume"] = fixedVolume
+
+    # ONLY for brainsfit
+    parameters['initializeTransformMode'] = 'useCenterOfHeadAlign'
+    parameters['useRigid'] = True
     
     # Create an output volume
     outputVolume = slicer.vtkMRMLScalarVolumeNode()
@@ -128,7 +134,7 @@ class ScriptMBWidget:
 
     print "Calling register volumes CLI..."
     self.__cliNode = None
-    self.__cliNode = slicer.cli.run(brainsWarp, self.__cliNode, parameters)
+    self.__cliNode = slicer.cli.run(brainsFit, self.__cliNode, parameters)
     
     # Each time the event is modified, the function processSubtractCompletion will be called.
     self.__cliObserverTag = self.__cliNode.AddObserver('ModifiedEvent', self.processRegistrationCompletion)
