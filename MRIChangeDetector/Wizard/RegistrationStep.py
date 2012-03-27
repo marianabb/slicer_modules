@@ -25,7 +25,7 @@ class RegistrationStep(MRIChangeDetectorStep):
 
     self.__layout = self.__parent.createUserInterface()
 
-    ragistrationMethodLabel = qt.QLabel( 'Registration method:' )
+    self.__registrationMethodLabel = qt.QLabel( 'Registration method:' )
     self.__registrationSelector = slicer.qMRMLNodeComboBox()
     self.__registrationSelector.toolTip = "Choose the preferred registration method"
     self.__registrationSelector.nodeTypes = ['vtkMRMLAnnotationTextNode']
@@ -41,9 +41,9 @@ class RegistrationStep(MRIChangeDetectorStep):
     
     
     # Registration button
-    __registrationButton = qt.QPushButton("Run registration")
-    __registrationButton.toolTip = "Register the volumes."
-    __registrationStatus = qt.QLabel('Registration Status: N/A')
+    self.__registrationButton = qt.QPushButton("Run registration")
+    self.__registrationButton.toolTip = "Register the volumes."
+    self.__registrationStatus = qt.QLabel('Registration Status: N/A')
 
     
     self.__layout.addRow(self.__registrationMethodLabel, self.__registrationSelector)

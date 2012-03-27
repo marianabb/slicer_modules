@@ -53,18 +53,18 @@ class MRIChangeDetectorWidget:
     # Create all wizard steps
     selectVolumesStep = MRIChangeDetectorWizard.SelectVolumesStep('SelectVolumes')
     registrationStep = MRIChangeDetectorWizard.RegistrationStep('Registration')
-    quantificationStep = MRIChangeDetectorWizard.QuantificationStep('Quantification')
+    #quantificationStep = MRIChangeDetectorWizard.QuantificationStep('Quantification')
 
     # add the wizard steps to an array for convenience
     allSteps = []
 
     allSteps.append(selectVolumesStep)
     allSteps.append(registrationStep)
-    allSteps.append(quantificationStep)
+    #allSteps.append(quantificationStep)
 
     # Add transition for the first step which let's the user choose between simple and advanced mode
     self.workflow.addTransition( selectVolumesStep, registrationStep)
-    self.workflow.addTransition( registrationStep, quantificationStep)
+    #self.workflow.addTransition( registrationStep, quantificationStep)
 
     nNodes = slicer.mrmlScene.GetNumberOfNodesByClass('vtkMRMLScriptedModuleNode')
 
@@ -74,7 +74,7 @@ class MRIChangeDetectorWidget:
       nodeid = None
       if compNode.GetModuleName() == 'MRIChangeDetector':
         self.parameterNode = compNode
-        print 'Found existing MRIChageDetector parameter node'
+        print 'Found existing MRIChangeDetector parameter node'
         break
     if self.parameterNode == None:
       self.parameterNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLScriptedModuleNode')
@@ -94,8 +94,8 @@ class MRIChangeDetectorWidget:
         self.workflow.setInitialStep(selectVolumesStep)
       if currentStep == 'Registration':
         self.workflow.setInitialStep(registrationStep)
-      if currentStep == 'Quantification':
-        self.workflow.setInitialStep(quantificationStep)
+      #if currentStep == 'Quantification':
+      #  self.workflow.setInitialStep(quantificationStep)
     else:
       print 'currentStep in parameter node is empty!'
         

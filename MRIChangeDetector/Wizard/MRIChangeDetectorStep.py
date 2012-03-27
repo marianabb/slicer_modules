@@ -58,13 +58,13 @@ class MRIChangeDetectorStep(ctk.ctkWorkflowWidgetStep):
     comingFromId = "None"
     if comingFrom: comingFromId = comingFrom.id()
     #print "-> onEntry - current [%s] - comingFrom [%s]" % ( self.id(), comingFromId )
-    super(MRIChageDetectorStep, self).onEntry(comingFrom, transitionType)
+    super(MRIChangeDetectorStep, self).onEntry(comingFrom, transitionType)
 
   def onExit(self, goingTo, transitionType):
     goingToId = "None"
     if goingTo: goingToId = goingTo.id()
     #print "-> onExit - current [%s] - goingTo [%s]" % ( self.id(), goingToId )
-    super(MRIChageDetectorStep, self).onExit(goingTo, transitionType)
+    super(MRIChangeDetectorStep, self).onExit(goingTo, transitionType)
 
   def validate(self, desiredBranchId):
     return
@@ -73,7 +73,7 @@ class MRIChangeDetectorStep(ctk.ctkWorkflowWidgetStep):
   def validationSucceeded(self, desiredBranchId):
     '''
     '''
-    super(MRIChageDetectorStep, self).validate(True, desiredBranchId)
+    super(MRIChangeDetectorStep, self).validate(True, desiredBranchId)
 
   def validationFailed(self, desiredBranchId, messageTitle='Error', messageText='There was an unknown error. See the console output for more details!'):
     '''
