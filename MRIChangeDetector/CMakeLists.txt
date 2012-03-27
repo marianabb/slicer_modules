@@ -76,10 +76,10 @@ ctkMacroCompilePythonScript(
   TARGET_NAME MRIChangeDetector
   SCRIPTS "${KIT_PYTHON_SCRIPTS}"
   RESOURCES "${KIT_PYTHON_RESOURCES}"
-  #MB DESTINATION_DIR ${CMAKE_BINARY_DIR}/${Slicer_QTSCRIPTEDMODULES_LIB_DIR}
-  #MB INSTALL_DIR ${Slicer_INSTALL_QTSCRIPTEDMODULES_LIB_DIR}
-  DESTINATION_DIR /home/mariana/thesis_apps/Slicer/Slicer4-SuperBuild/Slicer-build/Modules/Scripted/MRIChangeDetector 
-  INSTALL_DIR  /home/mariana/thesis_apps/Slicer/Slicer4-SuperBuild/Slicer-build/Modules/Scripted
+  DESTINATION_DIR ${CMAKE_BINARY_DIR}/${Slicer_QTSCRIPTEDMODULES_LIB_DIR}
+  INSTALL_DIR ${Slicer_INSTALL_QTSCRIPTEDMODULES_LIB_DIR}
+  #DESTINATION_DIR /home/mariana/thesis_apps/Slicer/Slicer4-SuperBuild/Slicer-build/Modules/Scripted/MRIChangeDetector 
+  #INSTALL_DIR  /home/mariana/thesis_apps/Slicer/Slicer4-SuperBuild/Slicer-build/Modules/Scripted
   NO_INSTALL_SUBDIR
   )
 

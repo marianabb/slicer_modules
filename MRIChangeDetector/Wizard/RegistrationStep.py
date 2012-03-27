@@ -3,7 +3,7 @@ from __main__ import qt, ctk
 from MRIChangeDetectorStep import *
 from Helper import *
 
-class RegistrationStep(MRIChageDetectorStep):
+class RegistrationStep(MRIChangeDetectorStep):
   def __init__(self, stepid):
     self.initialize(stepid)
     self.setName( '2. Select registration method' )

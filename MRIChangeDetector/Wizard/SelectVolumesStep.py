@@ -3,7 +3,7 @@ from __main__ import qt, ctk
 from MRIChangeDetectorStep import *
 from Helper import *
 
-class SelectVolumesStep(MRIChageDetectorStep):
+class SelectVolumesStep(MRIChangeDetectorStep):
 
   def __init__(self, stepid):
     self.initialize(stepid)
