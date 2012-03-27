@@ -2,6 +2,11 @@
 cmake_minimum_required(VERSION 2.8.4)
 #-----------------------------------------------------------------------------
 
+#SET(CMAKE_MODULE_PATH /home/mariana/thesis/slicer_tutorials/slicer_modules/MRIChangeDetector)
+
+SET(Slicer_DIR /home/mariana/thesis_apps/Slicer/Slicer4-SuperBuild/Slicer-build)
+
+
 #-----------------------------------------------------------------------------
 # See http://cmake.org/cmake/help/cmake-2-8-docs.html#section_Policies for details
 #-----------------------------------------------------------------------------
@@ -49,7 +54,7 @@ if(NOT Slicer_SOURCE_DIR)
 endif()
 
 #-----------------------------------------------------------------------------
-# Added by Mariana Bustamante
+# Add new subdirectory
 #-----------------------------------------------------------------------------
 ADD_SUBDIRECTORY(Wizard)
 
@@ -71,8 +76,10 @@ ctkMacroCompilePythonScript(
   TARGET_NAME MRIChangeDetector
   SCRIPTS "${KIT_PYTHON_SCRIPTS}"
   RESOURCES "${KIT_PYTHON_RESOURCES}"
-  DESTINATION_DIR ${CMAKE_BINARY_DIR}/${Slicer_QTSCRIPTEDMODULES_LIB_DIR}
-  INSTALL_DIR ${Slicer_INSTALL_QTSCRIPTEDMODULES_LIB_DIR}
+  #MB DESTINATION_DIR ${CMAKE_BINARY_DIR}/${Slicer_QTSCRIPTEDMODULES_LIB_DIR}
+  #MB INSTALL_DIR ${Slicer_INSTALL_QTSCRIPTEDMODULES_LIB_DIR}
+  DESTINATION_DIR /home/mariana/thesis_apps/Slicer/Slicer4-SuperBuild/Slicer-build/Modules/Scripted/MRIChangeDetector 
+  INSTALL_DIR  /home/mariana/thesis_apps/Slicer/Slicer4-SuperBuild/Slicer-build/Modules/Scripted
   NO_INSTALL_SUBDIR
   )
 
