@@ -2,11 +2,6 @@
 cmake_minimum_required(VERSION 2.8.4)
 #-----------------------------------------------------------------------------
 
-#SET(CMAKE_MODULE_PATH /home/mariana/thesis/slicer_tutorials/slicer_modules/MRIChangeDetector)
-
-SET(Slicer_DIR /home/mariana/thesis_apps/Slicer/Slicer4-SuperBuild/Slicer-build)
-
-
 #-----------------------------------------------------------------------------
 # See http://cmake.org/cmake/help/cmake-2-8-docs.html#section_Policies for details
 #-----------------------------------------------------------------------------
