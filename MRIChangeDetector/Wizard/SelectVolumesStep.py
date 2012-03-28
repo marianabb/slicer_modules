@@ -1,7 +1,6 @@
 from __main__ import qt, ctk
 
 from MRIChangeDetectorStep import *
-from Helper import *
 
 class SelectVolumesStep(MRIChangeDetectorStep):
 
@@ -42,8 +41,16 @@ class SelectVolumesStep(MRIChangeDetectorStep):
 
     self.updateWidgetFromParameters(self.parameterNode())
 
-    # qt.QTimer.singleShot(0, self.killButton)
+    qt.QTimer.singleShot(0, self.killButton)
 
+
+  def killButton(self):
+    # hide useless button
+    bl = slicer.util.findChildren(text='Registration')
+    if len(bl):
+      bl[3].hide()
+      
+    
 
   def loadTestData(self):
     vl = slicer.modules.volumes.logic()
@@ -52,7 +59,7 @@ class SelectVolumesStep(MRIChangeDetectorStep):
     if vol1 != None and vol2 != None:
       self.__baselineVolumeSelector.setCurrentNode(vol1)
       self.__followupVolumeSelector.setCurrentNode(vol2)
-      Helper.SetBgFgVolumes(vol1.GetID(), vol2.GetID())
+      setBgFgVolumes(vol1.GetID(), vol2.GetID())
 
 
 
@@ -90,7 +97,7 @@ class SelectVolumesStep(MRIChangeDetectorStep):
     pNode = self.parameterNode()
     pNode.SetParameter('currentStep', self.stepid)
     
-    # qt.QTimer.singleShot(0, self.killButton)
+    qt.QTimer.singleShot(0, self.killButton)
 
 
   def onExit(self, goingTo, transitionType):
@@ -108,7 +115,14 @@ class SelectVolumesStep(MRIChangeDetectorStep):
     baselineVolumeID = parameterNode.GetParameter('baselineVolumeID')
     followupVolumeID = parameterNode.GetParameter('followupVolumeID')
     if baselineVolumeID != None:
-      self.__baselineVolumeSelector.setCurrentNode(Helper.getNodeByID(baselineVolumeID))
+      self.__baselineVolumeSelector.setCurrentNode(slicer.mrmlScene.GetNodeByID(baselineVolumeID))
     if followupVolumeID != None:
-      self.__followupVolumeSelector.setCurrentNode(Helper.getNodeByID(followupVolumeID))
+      self.__followupVolumeSelector.setCurrentNode(slicer.mrmlScene.GetNodeByID(followupVolumeID))
 
+
+  def setBgFgVolumes(bg, fg):
+    appLogic = slicer.app.applicationLogic()
+    selectionNode = appLogic.GetSelectionNode()
+    selectionNode.SetReferenceActiveVolumeID(bg)
+    selectionNode.SetReferenceSecondaryVolumeID(fg)
+    appLogic.PropagateVolumeSelection()

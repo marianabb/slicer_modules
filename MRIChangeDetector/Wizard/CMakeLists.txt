@@ -3,7 +3,6 @@ set(KIT_PYTHON_MODULE_NAME Wizard)
 
 set(KIT_PYTHON_SCRIPTS
   __init__.py
-  Helper.py
   MRIChangeDetectorStep.py
   SelectVolumesStep.py
   RegistrationStep.py

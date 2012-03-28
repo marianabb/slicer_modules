@@ -1,7 +1,7 @@
 from __main__ import qt, ctk
 
 from MRIChangeDetectorStep import *
-from Helper import *
+
 
 class RegistrationStep(MRIChangeDetectorStep):
   def __init__(self, stepid):
@@ -35,9 +35,18 @@ class RegistrationStep(MRIChangeDetectorStep):
     # Create the possible registration method labels
     methods = ['General Registration (BRAINS)', 'Demon Registration (BRAINS)', 'BSpline deformable registration']
 
-    for m in methods:
-      label = slicer.mrmlScene.CreateNodeByClass('vtkMRMLAnnotationTextNode')
-      label.SetTextLabel(m)
+    #for m in methods:
+    #  label = slicer.mrmlScene.CreateNodeByClass('vtkMRMLAnnotationTextNode')
+    #  label.SetTextLabel(m)
+
+    self.__label_BRAINS = slicer.mrmlScene.CreateNodeByClass('vtkMRMLAnnotationTextNode')
+    self.__label_BRAINS.SetTextLabel(methods[0])
+    self.__label_BRAINS.SetScene(slicer.mrmlScene)
+    self.__label_BRAINS.SetVisible(True)
+    self.__label_BRAINS.AddToSceneOn()
+
+    label_demon = slicer.mrmlScene.CreateNodeByClass('vtkMRMLAnnotationTextNode')
+    label_demon.SetTextLabel(methods[1])
     
     
     # Registration button
@@ -75,7 +84,7 @@ class RegistrationStep(MRIChangeDetectorStep):
     '''
     registrationMethodID = parameterNode.GetParameter('registrationMethodLabel')
     if registrationMethodID != None:
-      self.__registrationSelector.setCurrentNode(Helper.getNodeByID(registrationMethodID))
+      self.__registrationSelector.setCurrentNode(slicer.mrmlScene.GetNodeByID(registrationMethodID))
 
       
   def validate(self, desiredBranchId):
@@ -156,8 +165,16 @@ class RegistrationStep(MRIChangeDetectorStep):
       followupNode = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('followupVolumeID'))
       followupNode.SetAndObserveTransformNodeID(self.__followupTransform.GetID())
       
-      Helper.SetBgFgVolumes(pNode.GetParameter('baselineVolumeID'),pNode.GetParameter('followupVolumeID'))
+      setBgFgVolumes(pNode.GetParameter('baselineVolumeID'),pNode.GetParameter('followupVolumeID'))
 
       # Save both results in the parameterNode. TODO: I am probably repeating myself by saving the transform and also the new volume
       pNode.SetParameter('followupTransformID', self.__followupTransform.GetID())
       pNode.SetParameter('followupRegisteredVolumeID', self.__followupRegisteredVolume.GetID())
+
+
+  def setBgFgVolumes(bg, fg):
+    appLogic = slicer.app.applicationLogic()
+    selectionNode = appLogic.GetSelectionNode()
+    selectionNode.SetReferenceActiveVolumeID(bg)
+    selectionNode.SetReferenceSecondaryVolumeID(fg)
+    appLogic.PropagateVolumeSelection()
