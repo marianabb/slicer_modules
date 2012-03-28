@@ -1,4 +1,4 @@
-from __main__ import qt, ctk
+from __main__ import qt, ctk, vtk, slicer
 
 from MRIChangeDetectorStep import *
 
