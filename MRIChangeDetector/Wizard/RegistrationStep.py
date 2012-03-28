@@ -25,28 +25,16 @@ class RegistrationStep(MRIChangeDetectorStep):
 
     self.__layout = self.__parent.createUserInterface()
 
-    self.__registrationMethodLabel = qt.QLabel( 'Registration method:' )
-    self.__registrationSelector = slicer.qMRMLNodeComboBox()
-    self.__registrationSelector.toolTip = "Choose the preferred registration method"
-    self.__registrationSelector.nodeTypes = ['vtkMRMLAnnotationTextNode']
-    self.__registrationSelector.setMRMLScene(slicer.mrmlScene)
-    self.__registrationSelector.addEnabled = 0
+    registrationMethodLabel = qt.QLabel( 'Registration method:' )
 
     # Create the possible registration method labels
-    methods = ['General Registration (BRAINS)', 'Demon Registration (BRAINS)', 'BSpline deformable registration']
+    methods = ['Choose a method', 'General Registration (BRAINS)', 'Demon Registration (BRAINS)', 'BSpline deformable registration']
 
-    #for m in methods:
-    #  label = slicer.mrmlScene.CreateNodeByClass('vtkMRMLAnnotationTextNode')
-    #  label.SetTextLabel(m)
-
-    self.__label_BRAINS = slicer.mrmlScene.CreateNodeByClass('vtkMRMLAnnotationTextNode')
-    self.__label_BRAINS.SetTextLabel(methods[0])
-    self.__label_BRAINS.SetScene(slicer.mrmlScene)
-    self.__label_BRAINS.SetVisible(True)
-    self.__label_BRAINS.AddToSceneOn()
-
-    label_demon = slicer.mrmlScene.CreateNodeByClass('vtkMRMLAnnotationTextNode')
-    label_demon.SetTextLabel(methods[1])
+    # Registration Methods Combo box
+    self.__methodsComboBox = qt.QComboBox()
+    self.__methodsComboBox.toolTip = "Choose the preferred registration method"
+    for i,m in enumerate(methods):
+      self.__methodsComboBox.insertItem(i, m)
     
     
     # Registration button
@@ -55,12 +43,21 @@ class RegistrationStep(MRIChangeDetectorStep):
     self.__registrationStatus = qt.QLabel('Registration Status: N/A')
 
     
-    self.__layout.addRow(self.__registrationMethodLabel, self.__registrationSelector)
+    self.__layout.addRow(registrationMethodLabel, self.__methodsComboBox)
     self.__layout.addRow(self.__registrationButton)
     self.__layout.addRow("", qt.QWidget()) # empty row
     self.__layout.addRow(self.__registrationStatus)
     self.__registrationButton.connect('clicked()', self.onRegistrationRequest)
 
+    qt.QTimer.singleShot(0, self.killButton)
+
+
+  def killButton(self):
+    # hide useless button
+    bl = slicer.util.findChildren(text='Registration')
+    if len(bl):
+      bl[3].hide()
+    
 
   def onEntry(self, comingFrom, transitionType):
     super(RegistrationStep, self).onEntry(comingFrom, transitionType)
@@ -69,7 +66,9 @@ class RegistrationStep(MRIChangeDetectorStep):
     pNode = self.parameterNode()
     pNode.SetParameter('currentStep', self.stepid)
 
-
+    qt.QTimer.singleShot(0, self.killButton)
+    
+    
   def onExit(self, goingTo, transitionType):
     if goingTo.id() != 'Quantification':
       return
@@ -82,9 +81,9 @@ class RegistrationStep(MRIChangeDetectorStep):
     '''
     Update the widget according to the parameters selected by the user
     '''
-    registrationMethodID = parameterNode.GetParameter('registrationMethodLabel')
-    if registrationMethodID != None:
-      self.__registrationSelector.setCurrentNode(slicer.mrmlScene.GetNodeByID(registrationMethodID))
+    methodIndex = parameterNode.GetParameter('registrationMethodIndex')
+    if methodIndex != '':
+      self.__methodsComboBox.setCurrentIndex(methodIndex)
 
       
   def validate(self, desiredBranchId):
@@ -95,11 +94,11 @@ class RegistrationStep(MRIChangeDetectorStep):
     self.__parent.validate(desiredBranchId)
 
     # Check that the selector is not empty
-    method = self.__registrationSelector.currentNode()
+    method = self.__methodsComboBox.currentIndex
 
-    if method != None:
+    if method != 0:
       pNode = self.parameterNode()
-      pNode.SetParameter('registrationMethodLabel', method.GetTextLabel()) # TODO works?
+      pNode.SetParameter('registrationMethodIndex', method) # TODO works?
       self.__parent.validationSucceeded(desiredBranchId)
     else:
       self.__parent.validationFailed(desiredBranchId, 'Error','Please select a registration method!')
@@ -109,7 +108,7 @@ class RegistrationStep(MRIChangeDetectorStep):
     pNode = self.parameterNode()
     baselineVolumeID = pNode.GetParameter('baselineVolumeID')
     followupVolumeID = pNode.GetParameter('followupVolumeID')
-    methodLabel = pNode.GetParameter('registrationMethodLabel')
+    methodIndex = pNode.GetParameter('registrationMethodIndex')
 
     # Create and add the new nodes to be filled during this step
     self.__followupTransform = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLinearTransformNode')
@@ -124,8 +123,7 @@ class RegistrationStep(MRIChangeDetectorStep):
     parameters["linearTransform"] = self.__followupTransform.GetID()
     parameters["outputVolume"] = self.__followupRegisteredVolume.GetID()
 
-    
-    if methodLabel == 'BRAINSFit':
+    if methodIndex == 0: # General Registration (BRAINS)
       registrationCLI = slicer.modules.brainsfit
       parameters["fixedVolume"] = baselineVolumeID
       parameters["movingVolume"] = followupVolumeID
@@ -135,7 +133,7 @@ class RegistrationStep(MRIChangeDetectorStep):
       parameters["useScaleSkewVersor3D"] = True
       parameters["useAffine"] = True
     # TODO: Add more methods
-    else: # Default to BRAINSFit
+    else: # Default to General Registration (BRAINS)
       registrationCLI = slicer.modules.brainsfit
       parameters["fixedVolume"] = baselineVolumeID
       parameters["movingVolume"] = followupVolumeID
@@ -153,7 +151,7 @@ class RegistrationStep(MRIChangeDetectorStep):
     self.__registrationStatus.setText('Wait ...')
     self.__registrationButton.setEnabled(0)
 
-
+    
   def processRegistrationCompletion(self, node, event):
     status = node.GetStatusString()
     self.__registrationStatus.setText('Registration Status: '+status)
@@ -165,14 +163,14 @@ class RegistrationStep(MRIChangeDetectorStep):
       followupNode = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('followupVolumeID'))
       followupNode.SetAndObserveTransformNodeID(self.__followupTransform.GetID())
       
-      setBgFgVolumes(pNode.GetParameter('baselineVolumeID'),pNode.GetParameter('followupVolumeID'))
+      self.setBgFgVolumes(pNode.GetParameter('baselineVolumeID'), pNode.GetParameter('followupVolumeID'))
 
       # Save both results in the parameterNode. TODO: I am probably repeating myself by saving the transform and also the new volume
       pNode.SetParameter('followupTransformID', self.__followupTransform.GetID())
       pNode.SetParameter('followupRegisteredVolumeID', self.__followupRegisteredVolume.GetID())
 
 
-  def setBgFgVolumes(bg, fg):
+  def setBgFgVolumes(self, bg, fg):
     appLogic = slicer.app.applicationLogic()
     selectionNode = appLogic.GetSelectionNode()
     selectionNode.SetReferenceActiveVolumeID(bg)

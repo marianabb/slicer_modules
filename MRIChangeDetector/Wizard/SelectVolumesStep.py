@@ -50,7 +50,6 @@ class SelectVolumesStep(MRIChangeDetectorStep):
     if len(bl):
       bl[3].hide()
       
-    
 
   def loadTestData(self):
     vl = slicer.modules.volumes.logic()
@@ -59,8 +58,7 @@ class SelectVolumesStep(MRIChangeDetectorStep):
     if vol1 != None and vol2 != None:
       self.__baselineVolumeSelector.setCurrentNode(vol1)
       self.__followupVolumeSelector.setCurrentNode(vol2)
-      setBgFgVolumes(vol1.GetID(), vol2.GetID())
-
+      self.setBgFgVolumes(vol1.GetID(), vol2.GetID())
 
 
   def validate(self, desiredBranchId):
@@ -120,7 +118,7 @@ class SelectVolumesStep(MRIChangeDetectorStep):
       self.__followupVolumeSelector.setCurrentNode(slicer.mrmlScene.GetNodeByID(followupVolumeID))
 
 
-  def setBgFgVolumes(bg, fg):
+  def setBgFgVolumes(self, bg, fg): #TODO does Slicer already have a function for this?
     appLogic = slicer.app.applicationLogic()
     selectionNode = appLogic.GetSelectionNode()
     selectionNode.SetReferenceActiveVolumeID(bg)
