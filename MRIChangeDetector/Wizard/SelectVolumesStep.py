@@ -83,9 +83,9 @@ class SelectVolumesStep(MRIChangeDetectorStep):
         
         self.__parent.validationSucceeded(desiredBranchId)
       else:
-        self.__parent.validationFailed(desiredBranchId, 'Error','Please select disctint baseline and followup volumes!')
+        self.__parent.validationFailed(desiredBranchId, 'Error','Please select disctint baseline and followup volumes.')
     else:
-      self.__parent.validationFailed(desiredBranchId, 'Error','Please select both baseline and followup volumes!')
+      self.__parent.validationFailed(desiredBranchId, 'Error','Please select both baseline and followup volumes.')
 
 
   def onEntry(self, comingFrom, transitionType):

@@ -79,7 +79,7 @@ class MRIChangeDetectorStep(ctk.ctkWorkflowWidgetStep):
     '''
     '''
     messageBox = qt.QMessageBox.warning( self, messageTitle, messageText )
-    super( ChangeTrackerStep, self ).validate( False, desiredBranchId )
+    super(MRIChangeDetectorStep, self).validate(False, desiredBranchId)
 
   '''
   def updateWidgetFromParameters(self, parameterNode):
