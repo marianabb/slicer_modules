@@ -62,9 +62,9 @@ class RegistrationStep(MRIChangeDetectorStep):
 
   def killButton(self):
     # hide useless button
-    bl = slicer.util.findChildren(text='Registration')
+    bl = slicer.util.findChildren(text='Quantification')
     if len(bl):
-      bl[3].hide()
+      bl[2].hide()
     
 
   def onEntry(self, comingFrom, transitionType):
@@ -82,7 +82,7 @@ class RegistrationStep(MRIChangeDetectorStep):
       return
 
     # Nothing more because we already saved the volumes in pNode during validation
-    super(SelectVolumesStep, self).onExit(goingTo, transitionType)
+    super(RegistrationStep, self).onExit(goingTo, transitionType)
 
   
   def updateWidgetFromParameters(self, parameterNode):
@@ -104,8 +104,8 @@ class RegistrationStep(MRIChangeDetectorStep):
   def validate(self, desiredBranchId):
     '''
     Must define it since we inherit from ctk.ctkWorkflowWidgetStep
-    Check if the registration method has been chosen.
     '''
+    # TODO: Registration method is NOT mandatory! A registered volume ot transform might be.
     self.__parent.validate(desiredBranchId)
 
     # Check that the selector is not empty
@@ -113,7 +113,7 @@ class RegistrationStep(MRIChangeDetectorStep):
  
     if method != 0:
       pNode = self.parameterNode()
-      pNode.SetParameter('registrationMethodIndex', method) # TODO works? Check for ''?
+      pNode.SetParameter('registrationMethodIndex', str(method)) # Save methodIndex as a string
             
       self.__parent.validationSucceeded(desiredBranchId)
     else:
@@ -269,13 +269,13 @@ class RegistrationStep(MRIChangeDetectorStep):
   
       pNode = self.parameterNode()
       # Apply the generated transform on the follow-up node. TODO: Do I really want this?
-      if self.__followupTransform != None:
-        followupNode = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('followupVolumeID'))
-        followupNode.SetAndObserveTransformNodeID(self.__followupTransform.GetID())
+      #if self.__followupTransform != None:
+      #  followupNode = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('followupVolumeID'))
+      #  followupNode.SetAndObserveTransformNodeID(self.__followupTransform.GetID())
       
       self.setBgFgVolumes(pNode.GetParameter('baselineVolumeID'), pNode.GetParameter('followupVolumeID'))
 
-      # Save both results in the parameterNode. TODO: I am repeating myself by saving the transform and also the new volume
+      # Save both results in the parameterNode.
       if self.__followupTransform != None:
         pNode.SetParameter('followupTransformID', self.__followupTransform.GetID())
       if self.__followupRegisteredVolume != None:  
@@ -285,6 +285,7 @@ class RegistrationStep(MRIChangeDetectorStep):
       if self.__baseFiducialList != None and self.__followFiducialList != None:
         pNode.SetParameter('baseFiducialsID', self.__baseFiducialList.GetID())
         pNode.SetParameter('followFiducialsID', self.__followFiducialList.GetID())
+        
     elif status == 'CompletedWithErrors':
       self.__registrationButton.setEnabled(1)
       # TODO: Can I tell exactly what happened?

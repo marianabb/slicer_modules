@@ -6,6 +6,7 @@ set(KIT_PYTHON_SCRIPTS
   MRIChangeDetectorStep.py
   SelectVolumesStep.py
   RegistrationStep.py
+  QuantificationStep.py
   )
 
 set(KIT_PYTHON_RESOURCES

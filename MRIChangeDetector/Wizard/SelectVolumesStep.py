@@ -46,9 +46,9 @@ class SelectVolumesStep(MRIChangeDetectorStep):
 
   def killButton(self):
     # hide useless button
-    bl = slicer.util.findChildren(text='Registration')
+    bl = slicer.util.findChildren(text='Quantification')
     if len(bl):
-      bl[3].hide()
+      bl[2].hide()
       
 
   def loadTestData(self):
