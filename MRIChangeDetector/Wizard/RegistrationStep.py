@@ -203,7 +203,7 @@ class RegistrationStep(MRIChangeDetectorStep):
         parameters["MovingImageFileName"] = followupVolumeID
         parameters["OutputTransform"] = self.__followupTransform.GetID()
         parameters["ResampledImageFileName"] = self.__followupRegisteredVolume.GetID()
-      elif methodIndex == 4: # Fiducial Registration    
+      elif methodIndex == 4: # Fiducial Registration
         registrationCLI = slicer.modules.fiducialregistration
         parameters["fixedLandmarks"] = self.__baseFiducialList.GetID()
         parameters["movingLandmarks"] = self.__followFiducialList.GetID()
@@ -233,19 +233,19 @@ class RegistrationStep(MRIChangeDetectorStep):
       # Input validation was unsuccessful. Show a message depending on the method
       if methodIndex == 4:
         qt.QMessageBox.warning(self, 'Error: Fiducial Registration', 'Please select valid and disctinct lists of landmarks.')
+      else:
+        qt.QMessageBox.warning(self, 'Error: Registration', 'The registration inputs provided are incomplete or wrong.')
       
 
   def validateRegistrationInput(self, method):
     # Fiducial registration requires two lists of landmarks
     if method == 4:
-      self.__baseFiducialList = self.__baseFiducialsSelector.currentNode
-      self.__followFiducialList = self.__followFiducialsSelector.currentNode
+      self.__baseFiducialList = self.__baseFiducialsSelector.currentNode()
+      self.__followFiducialList = self.__followFiducialsSelector.currentNode()
       if self.__baseFiducialList == None or self.__followFiducialList == None:
         return False
       else:
         # We have fiducials. Save them in the parameter node.
-        slicer.mrmlScene.AddNode(self.__baseFiducialList)
-        slicer.mrmlScene.AddNode(self.__followFiducialList)
         baseFID = self.__baseFiducialList.GetID()
         followFID = self.__followFiducialList.GetID()
 
@@ -269,18 +269,26 @@ class RegistrationStep(MRIChangeDetectorStep):
   
       pNode = self.parameterNode()
       # Apply the generated transform on the follow-up node. TODO: Do I really want this?
-      followupNode = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('followupVolumeID'))
-      followupNode.SetAndObserveTransformNodeID(self.__followupTransform.GetID())
+      if self.__followupTransform != None:
+        followupNode = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('followupVolumeID'))
+        followupNode.SetAndObserveTransformNodeID(self.__followupTransform.GetID())
       
       self.setBgFgVolumes(pNode.GetParameter('baselineVolumeID'), pNode.GetParameter('followupVolumeID'))
 
-      # Save both results in the parameterNode. TODO: I am probably repeating myself by saving the transform and also the new volume     
-      pNode.SetParameter('followupTransformID', self.__followupTransform.GetID())
-      pNode.SetParameter('followupRegisteredVolumeID', self.__followupRegisteredVolume.GetID())
+      # Save both results in the parameterNode. TODO: I am repeating myself by saving the transform and also the new volume
+      if self.__followupTransform != None:
+        pNode.SetParameter('followupTransformID', self.__followupTransform.GetID())
+      if self.__followupRegisteredVolume != None:  
+        pNode.SetParameter('followupRegisteredVolumeID', self.__followupRegisteredVolume.GetID())
 
       # If the method was fiducial registration, save also the fiducial lists
-      pNode.SetParameter('baseFiducialsID', self.__baseFiducialList.GetID())
-      pNode.SetParameter('followFiducialsID', self.__followFiducialList.GetID())
+      if self.__baseFiducialList != None and self.__followFiducialList != None:
+        pNode.SetParameter('baseFiducialsID', self.__baseFiducialList.GetID())
+        pNode.SetParameter('followFiducialsID', self.__followFiducialList.GetID())
+    elif status == 'CompletedWithErrors':
+      self.__registrationButton.setEnabled(1)
+      # TODO: Can I tell exactly what happened?
+      qt.QMessageBox.warning(self, 'Error: Registration', 'The registration completed with errors. Please check the inputs.')
 
 
   def setBgFgVolumes(self, bg, fg):
