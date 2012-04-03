@@ -18,14 +18,14 @@ class SelectVolumesStep(MRIChangeDetectorStep):
     '''
     self.__layout = self.__parent.createUserInterface()
    
-    baselineScanLabel = qt.QLabel( 'Baseline volume:' )
+    baselineScanLabel = qt.QLabel('Baseline volume:')
     self.__baselineVolumeSelector = slicer.qMRMLNodeComboBox()
     self.__baselineVolumeSelector.toolTip = "Choose the baseline volume"
     self.__baselineVolumeSelector.nodeTypes = ['vtkMRMLScalarVolumeNode']
     self.__baselineVolumeSelector.setMRMLScene(slicer.mrmlScene)
     self.__baselineVolumeSelector.addEnabled = 0
 
-    followupScanLabel = qt.QLabel( 'Followup volume:' )
+    followupScanLabel = qt.QLabel('Followup volume:')
     self.__followupVolumeSelector = slicer.qMRMLNodeComboBox()
     self.__followupVolumeSelector.toolTip = "Choose the followup volume"
     self.__followupVolumeSelector.nodeTypes = ['vtkMRMLScalarVolumeNode']
@@ -76,7 +76,7 @@ class SelectVolumesStep(MRIChangeDetectorStep):
       baselineID = baseline.GetID()
       followupID = followup.GetID()
       
-      if baselineID != '' and followupID != '' and baselineID != followupID: #TODO Why check if they are the same?
+      if baselineID != '' and followupID != '' and baselineID != followupID: 
         pNode = self.parameterNode()
         pNode.SetParameter('baselineVolumeID', baselineID)
         pNode.SetParameter('followupVolumeID', followupID)

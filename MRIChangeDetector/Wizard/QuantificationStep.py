@@ -55,11 +55,8 @@ class QuantificationStep(MRIChangeDetectorStep):
 
     qt.QTimer.singleShot(0, self.killButton)
     
-    
+   
   def onExit(self, goingTo, transitionType):
-    if goingTo.id() != 'Quantification':
-      return
-
     # Nothing more because we already saved the volumes in pNode during validation
     super(SelectVolumesStep, self).onExit(goingTo, transitionType)
 
@@ -84,7 +81,7 @@ class QuantificationStep(MRIChangeDetectorStep):
     # Obtain inputs
     pNode = self.parameterNode()
     baselineVolumeID = pNode.GetParameter('baselineVolumeID')
-    registeredVolumeID = pNode.GetParameter('followupRegisteredVolumeID')
+    registeredVolumeID = pNode.GetParameter('registeredVolumeID')
 
     # Subtract baseline and registered volumes. Result in self.__subtractedVolume
     self.subtractVolumes(baselineVolumeID, registeredVolumeID)
@@ -129,6 +126,6 @@ class QuantificationStep(MRIChangeDetectorStep):
       #import vtk.util.numpy_support
       #a = vtk.util.numpy_support.vtk_to_numpy(i.GetPointData().GetScalars())
 
-    elif status == 'CompletedWithErrors':
+    elif status == 'CompletedWithErrors' or status == 'Idle':
       self.__quantificationButton.setEnabled(1)
       qt.QMessageBox.warning(self, 'Error: Subtract', 'Subtract completed with errors.')
