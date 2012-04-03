@@ -11,6 +11,9 @@ class QuantificationStep(MRIChangeDetectorStep):
     
     self.__parent = super(QuantificationStep, self)
 
+    # Volume generated when the registered and the original volume are subtracted
+    self.__subtractedVolume = None
+
     qt.QTimer.singleShot(0, self.killButton)
 
 
@@ -76,4 +79,56 @@ class QuantificationStep(MRIChangeDetectorStep):
     
 
   def onQuantificationRequest(self):
-    pass
+    # TODO: Validate inputs? (there are no inputs so far)
+    
+    # Obtain inputs
+    pNode = self.parameterNode()
+    baselineVolumeID = pNode.GetParameter('baselineVolumeID')
+    registeredVolumeID = pNode.GetParameter('followupRegisteredVolumeID')
+
+    # Subtract baseline and registered volumes. Result in self.__subtractedVolume
+    self.subtractVolumes(baselineVolumeID, registeredVolumeID)
+    
+
+
+  def subtractVolumes(self, IDvol1, IDvol2):
+    subtractmodule = slicer.modules.subtractscalarvolumes
+    
+    # Fill in the parameters
+    parameters = {}
+    parameters["inputVolume1"] = IDvol1
+    parameters["inputVolume2"] = IDvol2
+    
+    # Create an output volume
+    self.__subtractedVolume = slicer.mrmlScene.CreateNodeByClass('vtkMRMLScalarVolumeNode')
+    slicer.mrmlScene.AddNode(self.__subtractedVolume)
+    parameters["outputVolume"] = self.__subtractedVolume.GetID()
+    
+    self.__cliNode = None
+    self.__cliNode = slicer.cli.run(subtractmodule, self.__cliNode, parameters)
+
+    # Each time the event is modified, the function processSubtractCompletion will be called.
+    self.__cliObserverTag = self.__cliNode.AddObserver('ModifiedEvent', self.processSubtractCompletion)
+    self.__quantificationStatus.setText('Subtracting volumes...')
+    self.__quantificationButton.setEnabled(0)
+
+
+  def processSubtractCompletion(self, node, event):
+    status = node.GetStatusString()
+    self.__quantificationStatus.setText('Subtract status: '+status)
+
+    if status == 'Completed':
+      self.__quantificationButton.setEnabled(1)
+      
+      # Save result in pNode
+      pNode = self.parameterNode()
+      pNode.SetParameter('subtractedVolumeID', self.__subtractedVolume.GetID())
+      
+      # Get data from the volume
+      #i = self.__subtractedVolume.GetImageData()
+      #import vtk.util.numpy_support
+      #a = vtk.util.numpy_support.vtk_to_numpy(i.GetPointData().GetScalars())
+
+    elif status == 'CompletedWithErrors':
+      self.__quantificationButton.setEnabled(1)
+      qt.QMessageBox.warning(self, 'Error: Subtract', 'Subtract completed with errors.')
