@@ -210,8 +210,10 @@ class RegistrationStep(MRIChangeDetectorStep):
 
       # Create and add the new nodes to be filled during this step TODO: Maybe create them depending on method
       self.__registeredTransform = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLinearTransformNode')
+      self.__registeredTransform.SetName('Register_transform')
       slicer.mrmlScene.AddNode(self.__registeredTransform)
       self.__registeredVolume = slicer.mrmlScene.CreateNodeByClass('vtkMRMLScalarVolumeNode')
+      self.__registeredVolume.SetName('Register_output')
       slicer.mrmlScene.AddNode(self.__registeredVolume)
 
       parameters = {}

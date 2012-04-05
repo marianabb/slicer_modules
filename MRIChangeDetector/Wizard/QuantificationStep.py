@@ -123,6 +123,7 @@ class QuantificationStep(MRIChangeDetectorStep):
     
     # Create an output volume
     self.__subtractedVolume = slicer.mrmlScene.CreateNodeByClass('vtkMRMLScalarVolumeNode')
+    self.__subtractedVolume.SetName('Subtract_output')
     slicer.mrmlScene.AddNode(self.__subtractedVolume)
     parameters["outputVolume"] = self.__subtractedVolume.GetID()
     
@@ -177,6 +178,7 @@ class QuantificationStep(MRIChangeDetectorStep):
 
     # Create an output volume
     self.__thresholdedVolume = slicer.mrmlScene.CreateNodeByClass('vtkMRMLScalarVolumeNode')
+    self.__thresholdedVolume.SetName('Threshold_output')
     slicer.mrmlScene.AddNode(self.__thresholdedVolume)
     parameters["OutputVolume"] = self.__thresholdedVolume.GetID()
 
@@ -231,7 +233,8 @@ class QuantificationStep(MRIChangeDetectorStep):
       self.__vrDisplayNode.SetCurrentVolumeMapper(0)
       self.__vrDisplayNode.AddViewNodeID(viewNode.GetID())
       
-      v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('subtractedVolumeID'))
+#      v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('subtractedVolumeID'))
+      v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('thresholdedVolumeID'))
       self.__vrDisplayNode.SetAndObserveVolumeNodeID(v.GetID())
       self.__vrLogic.UpdateDisplayNodeFromVolumeNode(self.__vrDisplayNode, v)
       self.__vrOpacityMap = self.__vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetScalarOpacity()
@@ -249,6 +252,7 @@ class QuantificationStep(MRIChangeDetectorStep):
 
       self.__vrDisplayNode.VisibilityOn()
 
+      #threshRange = [60, 255]
       threshRange = [60, 255]
       self.__vrOpacityMap.RemoveAllPoints()
       self.__vrOpacityMap.AddPoint(0,0)

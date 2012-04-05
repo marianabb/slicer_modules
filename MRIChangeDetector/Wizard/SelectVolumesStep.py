@@ -53,8 +53,17 @@ class SelectVolumesStep(MRIChangeDetectorStep):
 
   def loadTestData(self):
     vl = slicer.modules.volumes.logic()
-    vol1 = vl.AddArchetypeVolume('/home/mariana/thesis/volumes/first_batch/patient1-us1/test.dcm', 'volume1', 0)
-    vol2 = vl.AddArchetypeVolume('/home/mariana/thesis/volumes/first_batch/patient1-us2/test.dcm', 'volume2', 0)
+    
+    import sys # TODO: make this permanent in a better way
+    if sys.platform == 'linux2':
+      vol1 = vl.AddArchetypeVolume('/home/mariana/thesis/volumes/first_batch/patient1-us1/test.dcm', 'volume1', 0)
+      vol2 = vl.AddArchetypeVolume('/home/mariana/thesis/volumes/first_batch/patient1-us2/test.dcm', 'volume2', 0)
+    elif sys.platform == 'darwin':
+      vol1 = vl.AddArchetypeVolume('/Users/mariana/Documents/Uppsala/thesis/Raili/patient1-us1/test.dcm', 'volume1', 0)
+      vol2 = vl.AddArchetypeVolume('/Users/mariana/Documents/Uppsala/thesis/Raili/patient1-us2/test.dcm', 'volume2', 0)
+    else:
+      qt.QMessageBox.warning(self, 'Error: Load test data', 'System platform could not be determined.')
+
     if vol1 != None and vol2 != None:
       self.__baselineVolumeSelector.setCurrentNode(vol1)
       self.__followupVolumeSelector.setCurrentNode(vol2)
