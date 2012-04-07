@@ -233,26 +233,24 @@ class QuantificationStep(MRIChangeDetectorStep):
       self.__vrDisplayNode.SetCurrentVolumeMapper(0)
       self.__vrDisplayNode.AddViewNodeID(viewNode.GetID())
       
-#      v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('subtractedVolumeID'))
-      v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('thresholdedVolumeID'))
+      v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('subtractedVolumeID'))
+#      v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('thresholdedVolumeID'))
       self.__vrDisplayNode.SetAndObserveVolumeNodeID(v.GetID())
       self.__vrLogic.UpdateDisplayNodeFromVolumeNode(self.__vrDisplayNode, v)
       self.__vrOpacityMap = self.__vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetScalarOpacity()
       self.__vrColorMap = self.__vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetRGBTransferFunction()
       
       # setup color transfer function once
-      # baselineROIRange = v.GetImageData().GetScalarRange()
-
-      # self.__vrColorMap.RemoveAllPoints()
-      # self.__vrColorMap.AddRGBPoint(0, 0, 0, 0)
-      # self.__vrColorMap.AddRGBPoint(baselineROIRange[0]-1, 0, 0, 0) 
-      # self.__vrColorMap.AddRGBPoint(baselineROIRange[0], 0.8, 0.8, 0) 
-      # self.__vrColorMap.AddRGBPoint(baselineROIRange[1], 0.8, 0.8, 0) 
-      # self.__vrColorMap.AddRGBPoint(baselineROIRange[1]+1, 0, 0, 0) 
+      baselineROIRange = v.GetImageData().GetScalarRange()
+      self.__vrColorMap.RemoveAllPoints()
+      self.__vrColorMap.AddRGBPoint(0, 0, 0, 0)
+      self.__vrColorMap.AddRGBPoint(baselineROIRange[0]-1, 0, 0, 0) 
+      self.__vrColorMap.AddRGBPoint(baselineROIRange[0], 0.8, 0, 0) 
+      self.__vrColorMap.AddRGBPoint(baselineROIRange[1], 0.8, 0, 0) 
+      self.__vrColorMap.AddRGBPoint(baselineROIRange[1]+1, 0, 0, 0) 
 
       self.__vrDisplayNode.VisibilityOn()
 
-      #threshRange = [60, 255]
       threshRange = [60, 255]
       self.__vrOpacityMap.RemoveAllPoints()
       self.__vrOpacityMap.AddPoint(0,0)
