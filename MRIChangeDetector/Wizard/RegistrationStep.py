@@ -68,7 +68,6 @@ class RegistrationStep(MRIChangeDetectorStep):
     self.__resultVolumeSelector.setCurrentNodeIndex(0) # Empty in the beginning
     self.__resultTransformSelector.setMRMLScene(slicer.mrmlScene)
     self.__resultTransformSelector.addEnabled = 0
-
     
     self.__layout.addRow(registrationMethodLabel, self.__methodsComboBox)
     self.__layout.addRow(self.__registrationButton)
@@ -153,13 +152,18 @@ class RegistrationStep(MRIChangeDetectorStep):
     if resultVolume == None and resultTransform == None:
       self.__parent.validationFailed(desiredBranchId, 'Error','Please select a registered volume or transform to use during quantification.')
 
-    # TODO: better way to check this?
-    if resultVolume != None and pNode.GetParameter('registeredVolumeID') == '':
+    if resultVolume != None:
       pNode.SetParameter('registeredVolumeID', resultVolume.GetID())
+      # If we have already subtracted we must reset the volume
+      if pNode.GetParameter('subtractedVolumeID') != '':
+        pNode.SetParameter('subtractedVolumeID', '')
     
-    if resultTransform != None and pNode.GetParameter('registeredTransformID') == '':
+    if resultTransform != None:
       pNode.SetParameter('registeredTransformID', resultTransform.GetID())
-    
+      # If we have already subtracted we must reset the volume
+      if pNode.GetParameter('subtractedVolumeID') != '':
+        pNode.SetParameter('subtractedVolumeID', '')
+
     self.__parent.validationSucceeded(desiredBranchId)
 
 
@@ -347,3 +351,4 @@ class RegistrationStep(MRIChangeDetectorStep):
     selectionNode.SetReferenceActiveVolumeID(bg)
     selectionNode.SetReferenceSecondaryVolumeID(fg)
     appLogic.PropagateVolumeSelection()
+  

@@ -26,28 +26,31 @@ class QuantificationStep(MRIChangeDetectorStep):
 
     self.__layout = self.__parent.createUserInterface()
 
+    # Threshold range widget
+    threshLabel = qt.QLabel('Choose threshold:')
+    self.__threshRange = slicer.qMRMLRangeWidget()
+    self.__threshRange.decimals = 0
+    self.__threshRange.singleStep = 1
+    self.__threshRange.maximum = 255.0
+    self.__threshRange.minimumValue = 60
+    self.__threshRange.maximumValue = 255
+
+    self.__layout.addRow(threshLabel)
+    self.__layout.addRow(self.__threshRange)
+    self.__layout.addRow("", qt.QWidget()) # empty row
+
+
     # Quantification button
     self.__quantificationButton = qt.QPushButton("Run quantification")
     self.__quantificationButton.toolTip = "Measure the differences between baseline and follow-up volumes."
     self.__quantificationStatus = qt.QLabel('Quantification Status: N/A')
-
-    # Volume rendering test button
-    self.__testButton = qt.QPushButton("Run volume!")
-    self.__testButton.toolTip = ""
-    self.__testStatus = qt.QLabel('Volume Status: N/A')
 
     self.__layout.addRow(self.__quantificationButton)
     self.__layout.addRow("", qt.QWidget()) # empty row
     self.__layout.addRow(self.__quantificationStatus)
     self.__layout.addRow("", qt.QWidget()) # empty row
     self.__quantificationButton.connect('clicked()', self.onQuantificationRequest)
-
-    self.__layout.addRow(self.__testButton)
     self.__layout.addRow("", qt.QWidget()) # empty row
-    self.__layout.addRow(self.__testStatus)
-    self.__layout.addRow("", qt.QWidget()) # empty row
-    self.__testButton.connect('clicked()', self.onTestRequest)
-
 
     qt.QTimer.singleShot(0, self.killButton)
 
@@ -71,7 +74,7 @@ class QuantificationStep(MRIChangeDetectorStep):
    
   def onExit(self, goingTo, transitionType):
     # Nothing more because we already saved the volumes in pNode during validation
-    super(SelectVolumesStep, self).onExit(goingTo, transitionType)
+    super(QuantificationStep, self).onExit(goingTo, transitionType)
 
 
   def updateWidgetFromParameters(self, parameterNode):
@@ -91,8 +94,6 @@ class QuantificationStep(MRIChangeDetectorStep):
   def onQuantificationRequest(self):
     # TODO: Validate inputs? (there are no inputs so far)
     
-    self.__quantificationStatus.setText('Subtracting volumes...')
-    self.__quantificationButton.setEnabled(0)
 
     # pop up progress dialog to prevent user from messing around
     self.progress = qt.QProgressDialog(slicer.util.mainWindow())
@@ -107,119 +108,70 @@ class QuantificationStep(MRIChangeDetectorStep):
     slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
     self.progress.repaint()
 
-    
-    # Obtain inputs
     pNode = self.parameterNode()
-    baselineVolumeID = pNode.GetParameter('baselineVolumeID')
-    registeredVolumeID = pNode.GetParameter('registeredVolumeID')
 
+    
     # 1. Subtract baseline and registered volumes. Result in self.__subtractedVolume
-    subtractmodule = slicer.modules.subtractscalarvolumes
+    # Only subtract if I haven't done it before
+    if pNode.GetParameter('subtractedVolumeID') == '':
+      self.__quantificationStatus.setText('Subtracting volumes...')
+      self.__quantificationButton.setEnabled(0)
+
+      # Obtain inputs
+      baselineVolumeID = pNode.GetParameter('baselineVolumeID')
+      registeredVolumeID = pNode.GetParameter('registeredVolumeID')
+
+      subtractmodule = slicer.modules.subtractscalarvolumes
     
-    # Fill in the parameters
-    parameters = {}
-    parameters["inputVolume1"] = baselineVolumeID
-    parameters["inputVolume2"] = registeredVolumeID
+      # Fill in the parameters
+      parameters = {}
+      parameters["inputVolume1"] = baselineVolumeID
+      parameters["inputVolume2"] = registeredVolumeID
     
-    # Create an output volume
-    self.__subtractedVolume = slicer.mrmlScene.CreateNodeByClass('vtkMRMLScalarVolumeNode')
-    self.__subtractedVolume.SetName('Subtract_output')
-    slicer.mrmlScene.AddNode(self.__subtractedVolume)
-    parameters["outputVolume"] = self.__subtractedVolume.GetID()
+      # Create an output volume
+      self.__subtractedVolume = slicer.mrmlScene.CreateNodeByClass('vtkMRMLScalarVolumeNode')
+      self.__subtractedVolume.SetName('Subtract_output')
+      slicer.mrmlScene.AddNode(self.__subtractedVolume)
+      parameters["outputVolume"] = self.__subtractedVolume.GetID()
     
 
-    self.__cliNode = None
-    self.__cliNode = slicer.cli.run(subtractmodule, self.__cliNode, parameters, wait_for_completion = True)
+      self.__cliNode = None
+      self.__cliNode = slicer.cli.run(subtractmodule, self.__cliNode, parameters, wait_for_completion = True)
 
-    status = self.__cliNode.GetStatusString()
-    if status == 'Completed':
-      self.__quantificationStatus.setText('Subtract status: '+status)
-      #self.__quantificationButton.setEnabled(1) # TODO move to a better place
+      status = self.__cliNode.GetStatusString()
+      if status == 'Completed':
+        self.__quantificationStatus.setText('Subtract status: '+status)
       
-      # Save result in pNode
-      pNode = self.parameterNode()
-      pNode.SetParameter('subtractedVolumeID', self.__subtractedVolume.GetID())
+        # Save result in pNode
+        pNode = self.parameterNode()
+        pNode.SetParameter('subtractedVolumeID', self.__subtractedVolume.GetID())
       
-      # Get data from the volume
-      #i = self.__subtractedVolume.GetImageData()
-      #a = vtk.util.numpy_support.vtk_to_numpy(i.GetPointData().GetScalars())
+        # Get data from the volume
+        #i = self.__subtractedVolume.GetImageData()
+        #a = vtk.util.numpy_support.vtk_to_numpy(i.GetPointData().GetScalars())
 
-      # close the progress window 
-      self.progress.setValue(1)
-      self.progress.repaint()
-      slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
       
-    elif status == 'CompletedWithErrors' or status == 'Idle':
-      self.__quantificationStatus.setText('Subtract status: '+status)
-      self.__quantificationButton.setEnabled(1)
-      #qt.QMessageBox.warning(self, 'Error: Subtract', 'Subtract completed with errors.')
+      elif status == 'CompletedWithErrors' or status == 'Idle':
+        self.__quantificationStatus.setText('Subtract status: '+status)
+        self.__quantificationButton.setEnabled(1)
+        #qt.QMessageBox.warning(self, 'Error: Subtract', 'Subtract completed with errors.')
       
-      # close the progress window 
-      self.progress.setValue(1)
-      self.progress.repaint()
-      slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
-      self.progress.close() #TODO: Think this case further
-      self.progress = None
+        # close the progress window 
+        self.progress.setValue(2)
+        self.progress.repaint()
+        slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
+        self.progress.close() #TODO: Think this case further
+        self.progress = None
 
 
-    # 2. Threshold the subtracted volume to highlight only differences
-    self.progress.setLabelText('Thresholding subtracted volume')
+    # update the progress window 
+    self.progress.setValue(1)
+    self.progress.setLabelText('Rendering volume')
     slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
     self.progress.repaint()
 
-    thresholdmodule = slicer.modules.thresholdscalarvolume
-
-    # Fill in the parameters
-    parameters = {}
-    parameters["InputVolume"] = self.__subtractedVolume.GetID()
-    parameters["ThresholdValue"] = 60 # TODO: User should select this
-    parameters["OutsideValue"] = 255
-    parameters["ThresholdType"] = "Above"
-
-    # Create an output volume
-    self.__thresholdedVolume = slicer.mrmlScene.CreateNodeByClass('vtkMRMLScalarVolumeNode')
-    self.__thresholdedVolume.SetName('Threshold_output')
-    slicer.mrmlScene.AddNode(self.__thresholdedVolume)
-    parameters["OutputVolume"] = self.__thresholdedVolume.GetID()
-
-    self.__cliNode = None
-    self.__cliNode = slicer.cli.run(thresholdmodule, self.__cliNode, parameters, wait_for_completion = True)
-
-    status = self.__cliNode.GetStatusString()
-    if status == 'Completed':
-      self.__quantificationStatus.setText('Thresholding status: '+status)
-      self.__quantificationButton.setEnabled(1) # TODO move to final step
-      
-      # Save result in pNode
-      pNode = self.parameterNode()
-      pNode.SetParameter('thresholdedVolumeID', self.__thresholdedVolume.GetID())
-
-      # close the progress window 
-      self.progress.setValue(2)
-      self.progress.repaint()
-      slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
-      self.progress.close()
-      self.progress = None
-      
-    elif status == 'CompletedWithErrors':
-      self.__quantificationStatus.setText('Thresholding status: '+status)
-      self.__quantificationButton.setEnabled(1)
-            
-      # close the progress window 
-      self.progress.setValue(2)
-      self.progress.repaint()
-      slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
-      self.progress.close()
-      self.progress = None
-
-
-
-
-
-  def onTestRequest(self):
-    # 3. VR Testing
-
-    pNode = self.parameterNode()
+    # 2. Create a volume with the differences
+    self.__quantificationStatus.setText('Rendering volume...')
 
     self.__vrLogic = None
     self.__vrDisplayNode = None
@@ -227,14 +179,13 @@ class QuantificationStep(MRIChangeDetectorStep):
     self.__vrLogic = slicer.modules.volumerendering.logic() # createUserInterface
 
     # create VR node first time a valid ROI is selected (onROIChanged)
-    if self.__vrDisplayNode == None:
+    if self.__vrDisplayNode == None: # TODO: Delete or save
       self.__vrDisplayNode = self.__vrLogic.CreateVolumeRenderingDisplayNode()
       viewNode = slicer.util.getNode('vtkMRMLViewNode1')
       self.__vrDisplayNode.SetCurrentVolumeMapper(0)
       self.__vrDisplayNode.AddViewNodeID(viewNode.GetID())
       
       v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('subtractedVolumeID'))
-#      v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('thresholdedVolumeID'))
       self.__vrDisplayNode.SetAndObserveVolumeNodeID(v.GetID())
       self.__vrLogic.UpdateDisplayNodeFromVolumeNode(self.__vrDisplayNode, v)
       self.__vrOpacityMap = self.__vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetScalarOpacity()
@@ -251,7 +202,11 @@ class QuantificationStep(MRIChangeDetectorStep):
 
       self.__vrDisplayNode.VisibilityOn()
 
-      threshRange = [60, 255]
+      
+      low = self.__threshRange.minimumValue
+      high = self.__threshRange.maximumValue
+
+      threshRange = [low, high]
       self.__vrOpacityMap.RemoveAllPoints()
       self.__vrOpacityMap.AddPoint(0,0)
       self.__vrOpacityMap.AddPoint(0,0)
@@ -259,3 +214,16 @@ class QuantificationStep(MRIChangeDetectorStep):
       self.__vrOpacityMap.AddPoint(threshRange[0],1)
       self.__vrOpacityMap.AddPoint(threshRange[1],1)
       self.__vrOpacityMap.AddPoint(threshRange[1]+1,0)
+
+            
+    # close the progress window 
+    self.progress.setValue(2)
+    self.progress.repaint()
+    slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
+    self.progress.close()
+    self.progress = None
+    
+    # Enable the button again
+    self.__quantificationButton.setEnabled(1)
+    self.__quantificationStatus.setText('Rendering done.')
+ 
