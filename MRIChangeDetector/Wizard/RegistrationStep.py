@@ -232,8 +232,8 @@ class RegistrationStep(MRIChangeDetectorStep):
         parameters["movingVolume"] = followupVolumeID
         parameters["initializeTransformMode"] = "useCenterOfHeadAlign"
         parameters["useRigid"] = True
-        parameters["useScaleVersor3D"] = True
-        parameters["useScaleSkewVersor3D"] = True
+        parameters["useScaleVersor3D"] = False # Only rigid and affine
+        parameters["useScaleSkewVersor3D"] = False # Only rigid and affine
         parameters["useAffine"] = True
       elif methodIndex == 2: # Demon Registration (BRAINS)
         registrationCLI = slicer.modules.brainsdemonwarp
@@ -267,8 +267,8 @@ class RegistrationStep(MRIChangeDetectorStep):
         parameters["movingVolume"] = followupVolumeID
         parameters["initializeTransformMode"] = "useCenterOfHeadAlign"
         parameters["useRigid"] = True
-        parameters["useScaleVersor3D"] = True
-        parameters["useScaleSkewVersor3D"] = True
+        parameters["useScaleVersor3D"] = False
+        parameters["useScaleSkewVersor3D"] = False
         parameters["useAffine"] = True
 
       # Call the CLI

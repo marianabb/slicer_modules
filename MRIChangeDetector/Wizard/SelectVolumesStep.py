@@ -70,6 +70,7 @@ class SelectVolumesStep(MRIChangeDetectorStep):
       self.setBgFgVolumes(vol1.GetID(), vol2.GetID())
 
 
+
   def validate(self, desiredBranchId):
     '''
     Must define it since we inherit from ctk.ctkWorkflowWidgetStep
