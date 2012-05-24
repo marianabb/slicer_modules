@@ -36,12 +36,22 @@
     </image>
 
     <image type="label">
+      <name>outputLabelMap</name>
+      <label>Output LabelMap</label>
+      <channel>output</channel>
+      <index>2</index>
+      <description>Output Label map to show growth and shrinkage</description>
+    </image>
+
+    <image>
       <name>outputVolume</name>
       <label>Output Volume</label>
       <channel>output</channel>
-      <index>2</index>
+      <index>3</index>
       <description>Output volume to show the differences</description>
     </image>
+
+
   </parameters>
 
 </executable>

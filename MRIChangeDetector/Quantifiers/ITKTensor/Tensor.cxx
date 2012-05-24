@@ -4,30 +4,42 @@
 #include "itkImageDuplicator.h"
 #include "itkImageRegionIteratorWithIndex.h"
 #include "itkDisplacementFieldJacobianDeterminantFilter.h"
+#include "itkCastImageFilter.h"
+#include "itkRescaleIntensityImageFilter.h"
+#include "itkMinimumMaximumImageCalculator.h"
 
 #include "TensorCLP.h"
 
 typedef int PixelType;
+typedef float OutPixelType;
 typedef float JacPixelType;
 const unsigned int Dimension = 3;
 
-typedef itk::Image< PixelType, Dimension > ImageType; // We assume the input and output images have the same type
+typedef itk::Image< PixelType, Dimension > ImageType;
+typedef itk::Image< OutPixelType, Dimension > OutImageType;
 typedef itk::Image< JacPixelType, Dimension > JacImageType; // Jacobian image type
 typedef itk::Image<itk::Vector<JacPixelType, Dimension>, Dimension> DFImageType; // Deformation field image type
 
 typedef itk::ImageFileReader< ImageType > ReaderType;
 typedef itk::ImageFileReader< DFImageType > DFReaderType;
 typedef itk::ImageFileWriter< ImageType > WriterType;
+typedef itk::ImageFileWriter< OutImageType > OutWriterType;
 typedef itk::ImageDuplicator<ImageType> DuplicatorType;
 
 typedef itk::ImageRegionIteratorWithIndex<ImageType> IteratorType;
 typedef itk::DisplacementFieldJacobianDeterminantFilter<DFImageType, JacPixelType, JacImageType> JacFilterType; // Jacobian filter
 
+typedef itk::CastImageFilter< ImageType, OutImageType > CastFilterType; // Filter to cast from ImageType to OutImageType
+typedef itk::MinimumMaximumImageCalculator <ImageType> ImageCalculatorFilterType;
+typedef itk::RescaleIntensityImageFilter< OutImageType, OutImageType > RescaleFilterType;
 
-int main( int argc, char ** argv ) {
+
+//JacImageType::PixelType GetMaximumJacobian(JacImageType::Pointer image);
+
+int main(int argc, char ** argv) {
   
   PARSE_ARGS;
-  
+
   // Create readers for the inputs
   ReaderType::Pointer reader_fixedV = ReaderType::New(); // Fixed Volume
   DFReaderType::Pointer reader_demonsDF = DFReaderType::New(); // Deformation field resulting from BRAINSDemonWarp
@@ -36,10 +48,9 @@ int main( int argc, char ** argv ) {
   const char * inputFixed = fixedVolume.c_str();
   const char * inputDF = deformationField.c_str();
 
+  // Fill in the readers
   reader_fixedV->SetFileName(inputFixed);
   reader_demonsDF->SetFileName(inputDF);
-  
-  // Fill in the readers
   reader_fixedV->Update();
   reader_demonsDF->Update();
 
@@ -52,16 +63,29 @@ int main( int argc, char ** argv ) {
   // Apply the filter and obtain the result image
   JacImageType::Pointer jacImage = jacFilter->GetOutput();
 
+  // Create the fixed image using the reader
   ImageType::Pointer fixedImage = reader_fixedV->GetOutput(), changesLabel;
 
+  // Duplicate the fixed image to create the label map
   DuplicatorType::Pointer dup = DuplicatorType::New();
   dup->SetInputImage(reader_fixedV->GetOutput());
   dup->Update();
   changesLabel = dup->GetOutput();
   changesLabel->FillBuffer(0);
-  
-  
- 
+
+  // Create a new image with the same size for the output. But with floats instead of ints.
+  OutImageType::Pointer OutImage = OutImageType::New();
+  OutImageType::IndexType start;
+  start[0] = 0;
+  start[1] = 0;
+  start[2] = 0;
+  OutImageType::SizeType size = fixedImage->GetLargestPossibleRegion().GetSize();
+  OutImageType::RegionType region;
+  region.SetSize(size);
+  region.SetIndex(start);
+  OutImage->SetRegions(region);
+  OutImage->Allocate();
+
   // Iterate over the image and label according to the jacobian
   float jacDetSum = 0, nSegVoxels = 0;
   IteratorType bIt(fixedImage, fixedImage->GetBufferedRegion());
@@ -79,25 +103,60 @@ int main( int argc, char ** argv ) {
         changesLabel->SetPixel(idx, 14); // Local Expansion, Pink in labelMap
       if(jPxl < 0.9)
         changesLabel->SetPixel(idx, 12); // Local Shrinking, Green in labelMap
+
+      // Fill the output image with the jacobian values
+      OutImage->SetPixel(idx, jPxl);
     }
   }
+  
+  // Rescale the output volume intensities between 0 and 255
+  RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
+  rescaleFilter->SetInput(OutImage);
+  rescaleFilter->SetOutputMinimum(0);
+  rescaleFilter->SetOutputMaximum(255);
+  
 
-  // Create a writer for the output
-  WriterType::Pointer writer = WriterType::New();
-  writer->SetInput(changesLabel);
-  writer->SetFileName(outputVolume.c_str());  
-  writer->Update();
+  // Create a writer for the output label
+  WriterType::Pointer labelWriter = WriterType::New();
+  labelWriter->SetInput(changesLabel);
+  labelWriter->SetFileName(outputLabelMap.c_str());  
+  labelWriter->Update();
+
+
+  // Create a writer for the output volume
+  OutWriterType::Pointer OutWriter = OutWriterType::New();
+  OutWriter->SetInput(rescaleFilter->GetOutput());
+  OutWriter->SetFileName(outputVolume.c_str());  
+  OutWriter->Update();
 
 
   ImageType::SpacingType s = changesLabel->GetSpacing();
-  float sv = s[0]*s[1]*s[2];
-  std::cout << "sv = " << sv << std::endl;
+  float sv = s[0]*s[1]*s[2]; // 1
   std::cout << "jacDetSum = " << jacDetSum << std::endl;
   std::cout << "nSegVoxels = " << nSegVoxels << std::endl;
   std::cout << "Growth: " << (jacDetSum-nSegVoxels)*sv << " mm^3 (" << jacDetSum-nSegVoxels << " pixels) " << std::endl;
   //  std::cout << "Shrinkage: " << shrinkPixels*sv << " mm^3 (" << shrinkPixels << " pixels) " << std::endl;
   // std::cout << "Total: " << (growthPixels-shrinkPixels)*sv << " mm^3 (" << growthPixels-shrinkPixels << " pixels) " << std::endl
 
+  
+  } // try
+  catch (itk::ExceptionObject & err){
+    std::cerr << "ExceptionObject caught !" << std::endl;
+    std::cerr << err << std::endl;
+    return EXIT_FAILURE;
+  }
+ 
   return EXIT_SUCCESS;
-
 }
+
+
+
+// JacImageType::PixelType GetMaximumJacobian(JacImageType::Pointer image){
+//   ImageCalculatorFilterType::Pointer imageCalculatorFilter = ImageCalculatorFilterType::New();
+//   imageCalculatorFilter->SetImage(image);
+//   imageCalculatorFilter->ComputeMaximum();
+  
+//   JacImageType::PixelType maxJacobian = imageCalculatorFilter->GetMaximum();
+//   std::cout << "Max Jacobian = " << maxJacobian << std::endl;
+//   return maxJacobian;
+// }
