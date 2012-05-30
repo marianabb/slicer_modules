@@ -7,10 +7,11 @@
 #include "itkCastImageFilter.h"
 #include "itkRescaleIntensityImageFilter.h"
 #include "itkMinimumMaximumImageCalculator.h"
+#include "itkLogImageFilter.h"
 
 #include "TensorCLP.h"
 
-typedef int PixelType;
+typedef char PixelType;
 typedef float OutPixelType;
 typedef float JacPixelType;
 const unsigned int Dimension = 3;
@@ -31,6 +32,7 @@ typedef itk::DisplacementFieldJacobianDeterminantFilter<DFImageType, JacPixelTyp
 
 typedef itk::CastImageFilter< ImageType, OutImageType > CastFilterType; // Filter to cast from ImageType to OutImageType
 typedef itk::MinimumMaximumImageCalculator <ImageType> ImageCalculatorFilterType;
+typedef itk::LogImageFilter< OutImageType, OutImageType > LogFilterType;
 typedef itk::RescaleIntensityImageFilter< OutImageType, OutImageType > RescaleFilterType;
 
 
@@ -79,10 +81,13 @@ int main(int argc, char ** argv) {
   start[0] = 0;
   start[1] = 0;
   start[2] = 0;
+  // Both the size and the spacing must be the same as the fixedImage
   OutImageType::SizeType size = fixedImage->GetLargestPossibleRegion().GetSize();
+  OutImageType::SpacingType spacing = fixedImage->GetSpacing();
   OutImageType::RegionType region;
   region.SetSize(size);
   region.SetIndex(start);
+  OutImage->SetSpacing(spacing);
   OutImage->SetRegions(region);
   OutImage->Allocate();
 
@@ -99,19 +104,24 @@ int main(int argc, char ** argv) {
       JacImageType::PixelType jPxl = jacImage->GetPixel(idx);
       jacDetSum += jPxl;
       nSegVoxels++;
-      if(jPxl > 1.1)
+      if((jPxl > 1.1))
         changesLabel->SetPixel(idx, 14); // Local Expansion, Pink in labelMap
-      if(jPxl < 0.9)
+      if((jPxl < 0.9))
         changesLabel->SetPixel(idx, 12); // Local Shrinking, Green in labelMap
 
-      // Fill the output image with the jacobian values
-      OutImage->SetPixel(idx, jPxl);
+      // Fill the output image with the jacobian values. 
+      // Apply logarithm to make the differences more noticeable.
+      if(jPxl < 0.0){
+        OutImage->SetPixel(idx, log(1 + abs(jPxl)) * (-1));
+      } else {
+        OutImage->SetPixel(idx, log(1 + jPxl));
+      }
     }
   }
   
   // Rescale the output volume intensities between 0 and 255
   RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
-  rescaleFilter->SetInput(OutImage);
+  rescaleFilter->SetInput(OutImage);  
   rescaleFilter->SetOutputMinimum(0);
   rescaleFilter->SetOutputMaximum(255);
   
@@ -125,6 +135,7 @@ int main(int argc, char ** argv) {
 
   // Create a writer for the output volume
   OutWriterType::Pointer OutWriter = OutWriterType::New();
+  //  OutWriter->SetInput(OutImage); 
   OutWriter->SetInput(rescaleFilter->GetOutput());
   OutWriter->SetFileName(outputVolume.c_str());  
   OutWriter->Update();
@@ -137,14 +148,6 @@ int main(int argc, char ** argv) {
   std::cout << "Growth: " << (jacDetSum-nSegVoxels)*sv << " mm^3 (" << jacDetSum-nSegVoxels << " pixels) " << std::endl;
   //  std::cout << "Shrinkage: " << shrinkPixels*sv << " mm^3 (" << shrinkPixels << " pixels) " << std::endl;
   // std::cout << "Total: " << (growthPixels-shrinkPixels)*sv << " mm^3 (" << growthPixels-shrinkPixels << " pixels) " << std::endl
-
-  
-  } // try
-  catch (itk::ExceptionObject & err){
-    std::cerr << "ExceptionObject caught !" << std::endl;
-    std::cerr << err << std::endl;
-    return EXIT_FAILURE;
-  }
  
   return EXIT_SUCCESS;
 }
