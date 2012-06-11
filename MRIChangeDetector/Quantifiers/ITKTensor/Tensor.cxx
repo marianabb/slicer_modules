@@ -31,7 +31,7 @@ typedef itk::ImageRegionIteratorWithIndex<ImageType> IteratorType;
 typedef itk::DisplacementFieldJacobianDeterminantFilter<DFImageType, JacPixelType, JacImageType> JacFilterType; // Jacobian filter
 
 typedef itk::CastImageFilter< ImageType, OutImageType > CastFilterType; // Filter to cast from ImageType to OutImageType
-typedef itk::MinimumMaximumImageCalculator <ImageType> ImageCalculatorFilterType;
+typedef itk::MinimumMaximumImageCalculator <JacImageType> ImageCalculatorFilterType;
 typedef itk::LogImageFilter< OutImageType, OutImageType > LogFilterType;
 typedef itk::RescaleIntensityImageFilter< OutImageType, OutImageType > RescaleFilterType;
 
@@ -64,6 +64,18 @@ int main(int argc, char ** argv) {
 
   // Apply the filter and obtain the result image
   JacImageType::Pointer jacImage = jacFilter->GetOutput();
+
+  //--- Maximum and minumum Jacobians
+  ImageCalculatorFilterType::Pointer imageCalculatorFilter = ImageCalculatorFilterType::New();
+  imageCalculatorFilter->SetImage(jacImage);
+  imageCalculatorFilter->ComputeMaximum();
+  imageCalculatorFilter->ComputeMinimum();
+  
+  JacImageType::PixelType maxJacobian = imageCalculatorFilter->GetMaximum();
+  JacImageType::PixelType minJacobian = imageCalculatorFilter->GetMinimum();
+  std::cout << "Max Jacobian = " << maxJacobian << std::endl;
+  std::cout << "min Jacobian = " << minJacobian << std::endl;
+  // ---
 
   // Create the fixed image using the reader
   ImageType::Pointer fixedImage = reader_fixedV->GetOutput(), changesLabel;
@@ -104,15 +116,27 @@ int main(int argc, char ** argv) {
       JacImageType::PixelType jPxl = jacImage->GetPixel(idx);
       jacDetSum += jPxl;
       nSegVoxels++;
-      if((jPxl > 1.1))
-        changesLabel->SetPixel(idx, 14); // Local Expansion, Pink in labelMap
+      if((jPxl > 20.0))
+        changesLabel->SetPixel(idx, 18); // Local Expansion, forest(yellowish green) in labelMap
+      if((jPxl > 15.0) && (jPxl <= 20.0))
+        changesLabel->SetPixel(idx, 17); // Local Expansion, monk(dark blue) in labelMap
+      if((jPxl > 10.0) && (jPxl <= 15.0))
+        changesLabel->SetPixel(idx, 16); // Local Expansion, domino(light green) in labelMap
+      if((jPxl > 5.0) && (jPxl <= 10.0))
+        changesLabel->SetPixel(idx, 15); // Local Expansion, mambazo(purple) in labelMap
+      if((jPxl > 1.1) && (jPxl <= 5.0))
+        changesLabel->SetPixel(idx, 14); // Local Expansion, avery(pink) in labelMap
+      if((jPxl > 1.0) && (jPxl <= 1.1))
+        changesLabel->SetPixel(idx, 0); // No change, or almost no change
       if((jPxl < 0.9))
-        changesLabel->SetPixel(idx, 12); // Local Shrinking, Green in labelMap
+        changesLabel->SetPixel(idx, 12); // Local Shrinking, elwood(green) in labelMap
+
+
 
       // Fill the output image with the jacobian values. 
       // Apply logarithm to make the differences more noticeable.
       if(jPxl < 0.0){
-        OutImage->SetPixel(idx, log(1 + abs(jPxl)) * (-1));
+        OutImage->SetPixel(idx, (log(1 + abs(jPxl)) * (-1)));
       } else {
         OutImage->SetPixel(idx, log(1 + jPxl));
       }
@@ -135,8 +159,8 @@ int main(int argc, char ** argv) {
 
   // Create a writer for the output volume
   OutWriterType::Pointer OutWriter = OutWriterType::New();
-  //  OutWriter->SetInput(OutImage); 
-  OutWriter->SetInput(rescaleFilter->GetOutput());
+  OutWriter->SetInput(OutImage); 
+  //OutWriter->SetInput(rescaleFilter->GetOutput());
   OutWriter->SetFileName(outputVolume.c_str());  
   OutWriter->Update();
 
