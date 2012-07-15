@@ -8,8 +8,8 @@
 
 #include "IntensityNormCLP.h"
 
-typedef char PixelType;
-typedef char OutPixelType;
+typedef float PixelType;
+typedef float OutPixelType;
 const unsigned int Dimension = 3;
 
 typedef itk::Image< PixelType, Dimension > ImageType;
@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
   ReaderType::Pointer reader_input = ReaderType::New(); // Input Volume
   
   // Obtain values from the CLI
-  const char * inputVolume = inputVolume.c_str();
+  const char * inputVolume = inVolume.c_str();
 
   // Fill in the reader
   reader_input->SetFileName(inputVolume);
