@@ -12,9 +12,9 @@ class QuantificationStep(MRIChangeDetectorStep):
     self.__parent = super(QuantificationStep, self)
 
     # Volume generated when the registered and the original volume are subtracted
-    self.__subtractedVolume = None
+    #self.__subtractedVolume = None
     # Label map from the subtracted volume
-    self.__labelMap = None
+    self.__outputLabelM = None
 
     qt.QTimer.singleShot(0, self.killButton)
 
@@ -27,16 +27,16 @@ class QuantificationStep(MRIChangeDetectorStep):
     self.__layout = self.__parent.createUserInterface()
 
     # Threshold range widget
-    threshLabel = qt.QLabel('Choose threshold:')
-    self.__threshRange = slicer.qMRMLRangeWidget()
-    self.__threshRange.decimals = 0
-    self.__threshRange.singleStep = 1
-    self.__threshRange.maximum = 255.0
-    self.__threshRange.minimumValue = 60
-    self.__threshRange.maximumValue = 255
+#    threshLabel = qt.QLabel('Choose threshold:')
+#     self.__threshRange = slicer.qMRMLRangeWidget()
+#     self.__threshRange.decimals = 0
+#     self.__threshRange.singleStep = 1
+#     self.__threshRange.maximum = 255.0
+#     self.__threshRange.minimumValue = 60
+#     self.__threshRange.maximumValue = 255
 
-    self.__layout.addRow(threshLabel)
-    self.__layout.addRow(self.__threshRange)
+#     self.__layout.addRow(threshLabel)
+#     self.__layout.addRow(self.__threshRange)
     self.__layout.addRow("", qt.QWidget()) # empty row
 
 
@@ -94,17 +94,18 @@ class QuantificationStep(MRIChangeDetectorStep):
   def onQuantificationRequest(self):
     # TODO: Validate inputs? (there are no inputs so far)
     
+    self.__quantificationStatus.setText('Quantification status: Running...')
 
     # pop up progress dialog to prevent user from messing around
     self.progress = qt.QProgressDialog(slicer.util.mainWindow())
     self.progress.minimumDuration = 0
     self.progress.show()
-    self.progress.setValue(0) # Set first step
-    self.progress.setMaximum(2) # Total number of steps
+    self.progress.setValue(1) # Set first step
+    self.progress.setMaximum(3) # Total number of steps
     self.progress.setCancelButton(0)
     self.progress.setWindowModality(2)
  
-    self.progress.setLabelText('Subtracting baseline volume and registered follow-up volume')
+    self.progress.setLabelText('Subtracting baseline volume and registered follow-up volume...')
     slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
     self.progress.repaint()
 
@@ -120,72 +121,60 @@ class QuantificationStep(MRIChangeDetectorStep):
       # Obtain inputs
       baselineVolumeID = pNode.GetParameter('baselineVolumeID')
       registeredVolumeID = pNode.GetParameter('registeredVolumeID')
-
-      subtractmodule = slicer.modules.subtractscalarvolumes
     
       # Fill in the parameters
       parameters = {}
       parameters["inputVolume1"] = baselineVolumeID
       parameters["inputVolume2"] = registeredVolumeID
     
-      # Create an output volume
-      self.__subtractedVolume = slicer.mrmlScene.CreateNodeByClass('vtkMRMLScalarVolumeNode')
-      self.__subtractedVolume.SetName('Subtract_output')
-      slicer.mrmlScene.AddNode(self.__subtractedVolume)
-      parameters["outputVolume"] = self.__subtractedVolume.GetID()
-    
+      # Create an output labelMap
+      vl = slicer.modules.volumes.logic()
+      baselineVolume = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('baselineVolumeID'))
+      self.__outputLabelM = vl.CreateLabelVolume(slicer.mrmlScene, baselineVolume, 'subtracted_labelMap')
+      parameters["outputVolume"] = self.__outputLabelM.GetID()
 
+
+      # Obtain the module from the moduleManager
+      moduleManager = slicer.app.moduleManager()
+      subtractmodule = moduleManager.module('Subtractor')
+      
+      # Call the module
       self.__cliNode = None
       self.__cliNode = slicer.cli.run(subtractmodule, self.__cliNode, parameters, wait_for_completion = True)
 
       status = self.__cliNode.GetStatusString()
       if status == 'Completed':
         self.__quantificationStatus.setText('Subtract status: '+status)
+
+        # update the progress window 
+        self.progress.setValue(2)
+        self.progress.setLabelText('Subtraction Done. Creating LabelMap...')
+        slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
+        self.progress.repaint()
         
         # Change color of the volume to something brighter
         labelsColorNode = slicer.modules.colors.logic().GetColorTableNodeID(20) # ColorTable Magenta
-        self.__subtractedVolume.GetDisplayNode().SetAndObserveColorNodeID(labelsColorNode)
+        self.__outputLabelM.GetDisplayNode().SetAndObserveColorNodeID(labelsColorNode)
      
-        # Create a LabelMap with the subtraction volume
-        self.__labelMap = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLabelMapVolumeDisplayNode')
-        self.__labelMap.SetName('Subtract_LabelMap')
-        slicer.mrmlScene.AddNode(self.__labelMap)
- 
         # Save result in pNode
         pNode = self.parameterNode()
-        pNode.SetParameter('subtractedVolumeID', self.__subtractedVolume.GetID())
-        pNode.SetParameter('subtractionLabelMap', self.__labelMap.GetID())
+        pNode.SetParameter('subtractionLabelMap', self.__outputLabelM.GetID())
 
-        # Get data from the volume
-        #i = self.__subtractedVolume.GetImageData()
-        #a = vtk.util.numpy_support.vtk_to_numpy(i.GetPointData().GetScalars())
 
-      
       elif status == 'CompletedWithErrors' or status == 'Idle':
         self.__quantificationStatus.setText('Subtract status: '+status)
         self.__quantificationButton.setEnabled(1)
-        #qt.QMessageBox.warning(self, 'Error: Subtract', 'Subtract completed with errors.')
       
         # close the progress window 
-        self.progress.setValue(2)
+        self.progress.setValue(3)
         self.progress.repaint()
         slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
         self.progress.close() #TODO: Think this case further
         self.progress = None
 
-
-    # update the progress window 
-    self.progress.setValue(1)
-    self.progress.setLabelText('Rendering volume')
-    slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
-    self.progress.repaint()
-
-    # 2. Create a volume with the differences
-    self.__quantificationStatus.setText('Rendering volume...')
-
-            
+         
     # close the progress window 
-    self.progress.setValue(2)
+    self.progress.setValue(3)
     self.progress.repaint()
     slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
     self.progress.close()
@@ -193,5 +182,5 @@ class QuantificationStep(MRIChangeDetectorStep):
     
     # Enable the button again
     self.__quantificationButton.setEnabled(1)
-    self.__quantificationStatus.setText('Rendering done.')
+    self.__quantificationStatus.setText('Quantification status: Done. LabelMap created.')
  

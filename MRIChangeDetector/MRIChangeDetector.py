@@ -9,7 +9,7 @@ import MRIChangeDetectorWizard
 class MRIChangeDetector:
   def __init__(self, parent):
     parent.title = "MRIChangeDetector"
-    parent.categories = ["Mariana"]
+    parent.categories = ["Uppsala"]
     parent.dependencies = []
     parent.contributors = ["Mariana Bustamante (Uppsala University)"]
     parent.helpText = """

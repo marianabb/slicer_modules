@@ -230,15 +230,7 @@ class RegistrationStep(MRIChangeDetectorStep):
         parameters["ResampledImageFileName"] = self.__registeredVolume.GetID()
         parameters["FixedImageFileName"] = baselineVolumeID
         parameters["MovingImageFileName"] = followupVolumeID
-      elif methodIndex == 2: # Demon Registration (BRAINS)
-        registrationCLI = slicer.modules.brainsdemonwarp
-        parameters["fixedVolume"] = baselineVolumeID
-        parameters["movingVolume"] = followupVolumeID
-        parameters["outputVolume"] = self.__registeredVolume
-        # TODO in this method the output transform is not linear, it's a GridTransform
-        parameters["interpolationMode"] = "Linear" # Default is Linear
-        parameters["registrationFilterType"] = "Diffeomorphic" # Default is Diffeomorphic
-      elif methodIndex == 3: # BSpline deformable registration
+      elif methodIndex == 2: # BSpline deformable registration
         registrationCLI = slicer.modules.bsplinedeformableregistration
         parameters["Iterations"] = 20 # Default is 20
         parameters["GridSize"] = 5 # Default is 5
@@ -248,12 +240,20 @@ class RegistrationStep(MRIChangeDetectorStep):
         parameters["MovingImageFileName"] = followupVolumeID
         parameters["OutputTransform"] = self.__registeredTransform.GetID()
         parameters["ResampledImageFileName"] = self.__registeredVolume.GetID()
-      elif methodIndex == 4: # Fiducial Registration
-        registrationCLI = slicer.modules.fiducialregistration
-        parameters["fixedLandmarks"] = self.__baseFiducialList.GetID()
-        parameters["movingLandmarks"] = self.__followFiducialList.GetID()
-        parameters["saveTransform"] = self.__registeredTransform.GetID()
-        parameters["transformType"] = "Rigid" # Default is Rigid
+      elif methodIndex == 3: # Demon Registration (BRAINS)
+        registrationCLI = slicer.modules.brainsdemonwarp
+        parameters["fixedVolume"] = baselineVolumeID
+        parameters["movingVolume"] = followupVolumeID
+        parameters["outputVolume"] = self.__registeredVolume
+        # TODO in this method the output transform is not linear, it's a GridTransform
+        parameters["interpolationMode"] = "Linear" # Default is Linear
+        parameters["registrationFilterType"] = "Diffeomorphic" # Default is Diffeomorphic
+      #elif methodIndex == 4: # Fiducial Registration #TODO: Maybe add later
+      #  registrationCLI = slicer.modules.fiducialregistration
+      #  parameters["fixedLandmarks"] = self.__baseFiducialList.GetID()
+      #  parameters["movingLandmarks"] = self.__followFiducialList.GetID()
+      #  parameters["saveTransform"] = self.__registeredTransform.GetID()
+      #  parameters["transformType"] = "Rigid" # Default is Rigid
       else: # Default to Affine Registration
         registrationCLI = slicer.modules.affineregistration
         parameters["OutputTransform"] = self.__registeredTransform.GetID()
