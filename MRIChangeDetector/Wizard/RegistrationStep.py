@@ -29,7 +29,7 @@ class RegistrationStep(MRIChangeDetectorStep):
   def createUserInterface(self):
     '''
     The interface allows choosing a registration method and applying it on the already chosen volumes.
-    TODO: Alternatively the user can choose an already registered volume.
+    Alternatively the user can choose an already registered volume.
     '''
 
     self.__layout = self.__parent.createUserInterface()
@@ -37,7 +37,7 @@ class RegistrationStep(MRIChangeDetectorStep):
     registrationMethodLabel = qt.QLabel( 'Registration method:' )
 
     # Create the possible registration method labels
-    methods = ['Choose a method', 'General Registration (BRAINS)', 'Demon Registration (BRAINS)', 'BSpline deformable registration', 'Fiducial Registration']
+    methods = ['Choose a method', 'Affine Registration', 'Demon Registration (BRAINS)', 'BSpline deformable registration', 'Fiducial Registration']
 
     # Registration Methods Combo box
     self.__methodsComboBox = qt.QComboBox()
@@ -224,17 +224,12 @@ class RegistrationStep(MRIChangeDetectorStep):
       registrationCLI = None
     
       # Choose the right registration method according to 'methodLabel' and fill its parameters
-      if methodIndex == 1: # General Registration (BRAINS)
-        registrationCLI = slicer.modules.brainsfit
-        parameters["linearTransform"] = self.__registeredTransform.GetID()
-        parameters["outputVolume"] = self.__registeredVolume.GetID()
-        parameters["fixedVolume"] = baselineVolumeID
-        parameters["movingVolume"] = followupVolumeID
-        parameters["initializeTransformMode"] = "useCenterOfHeadAlign"
-        parameters["useRigid"] = True
-        parameters["useScaleVersor3D"] = False # Only rigid and affine
-        parameters["useScaleSkewVersor3D"] = False # Only rigid and affine
-        parameters["useAffine"] = True
+      if methodIndex == 1: # Affine Registration
+        registrationCLI = slicer.modules.affineregistration
+        parameters["OutputTransform"] = self.__registeredTransform.GetID()
+        parameters["ResampledImageFileName"] = self.__registeredVolume.GetID()
+        parameters["FixedImageFileName"] = baselineVolumeID
+        parameters["MovingImageFileName"] = followupVolumeID
       elif methodIndex == 2: # Demon Registration (BRAINS)
         registrationCLI = slicer.modules.brainsdemonwarp
         parameters["fixedVolume"] = baselineVolumeID
@@ -259,17 +254,12 @@ class RegistrationStep(MRIChangeDetectorStep):
         parameters["movingLandmarks"] = self.__followFiducialList.GetID()
         parameters["saveTransform"] = self.__registeredTransform.GetID()
         parameters["transformType"] = "Rigid" # Default is Rigid
-      else: # Default to General Registration (BRAINS)
-        registrationCLI = slicer.modules.brainsfit
-        parameters["linearTransform"] = self.__registeredTransform.GetID()
-        parameters["outputVolume"] = self.__registeredVolume.GetID()
-        parameters["fixedVolume"] = baselineVolumeID
-        parameters["movingVolume"] = followupVolumeID
-        parameters["initializeTransformMode"] = "useCenterOfHeadAlign"
-        parameters["useRigid"] = True
-        parameters["useScaleVersor3D"] = False
-        parameters["useScaleSkewVersor3D"] = False
-        parameters["useAffine"] = True
+      else: # Default to Affine Registration
+        registrationCLI = slicer.modules.affineregistration
+        parameters["OutputTransform"] = self.__registeredTransform.GetID()
+        parameters["ResampledImageFileName"] = self.__registeredVolume.GetID()
+        parameters["FixedImageFileName"] = baselineVolumeID
+        parameters["MovingImageFileName"] = followupVolumeID
 
       # Call the CLI
       self.__cliNode = None

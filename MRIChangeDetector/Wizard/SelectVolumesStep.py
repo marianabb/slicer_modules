@@ -59,8 +59,8 @@ class SelectVolumesStep(MRIChangeDetectorStep):
       vol1 = vl.AddArchetypeVolume('/home/mariana/thesis/volumes/first_batch/patient1-us1/test.dcm', 'volume1', 0)
       vol2 = vl.AddArchetypeVolume('/home/mariana/thesis/volumes/first_batch/patient1-us2/test.dcm', 'volume2', 0)
     elif sys.platform == 'darwin':
-      vol1 = vl.AddArchetypeVolume('/Users/mariana/Documents/Uppsala/thesis/Raili/patient1-us1/test.dcm', 'volume1', 0)
-      vol2 = vl.AddArchetypeVolume('/Users/mariana/Documents/Uppsala/thesis/Raili/patient1-us2/test.dcm', 'volume2', 0)
+      vol1 = vl.AddArchetypeVolume('/Users/mariana/Documents/Uppsala/thesis/volumes/first_batch/patient1-us1/test.dcm', 'volume1', 0)
+      vol2 = vl.AddArchetypeVolume('/Users/mariana/Documents/Uppsala/thesis/volumes/first_batch/patient1-us2/test.dcm', 'volume2', 0)
     else:
       qt.QMessageBox.warning(self, 'Error: Load test data', 'System platform could not be determined.')
 

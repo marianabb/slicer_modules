@@ -13,8 +13,8 @@ class QuantificationStep(MRIChangeDetectorStep):
 
     # Volume generated when the registered and the original volume are subtracted
     self.__subtractedVolume = None
-    # Volume generated after thresholding the subtracted volume
-    self.__thresholdedVolume = None
+    # Label map from the subtracted volume
+    self.__labelMap = None
 
     qt.QTimer.singleShot(0, self.killButton)
 
@@ -141,11 +141,21 @@ class QuantificationStep(MRIChangeDetectorStep):
       status = self.__cliNode.GetStatusString()
       if status == 'Completed':
         self.__quantificationStatus.setText('Subtract status: '+status)
-      
+        
+        # Change color of the volume to something brighter
+        labelsColorNode = slicer.modules.colors.logic().GetColorTableNodeID(20) # ColorTable Magenta
+        self.__subtractedVolume.GetDisplayNode().SetAndObserveColorNodeID(labelsColorNode)
+     
+        # Create a LabelMap with the subtraction volume
+        self.__labelMap = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLabelMapVolumeDisplayNode')
+        self.__labelMap.SetName('Subtract_LabelMap')
+        slicer.mrmlScene.AddNode(self.__labelMap)
+ 
         # Save result in pNode
         pNode = self.parameterNode()
         pNode.SetParameter('subtractedVolumeID', self.__subtractedVolume.GetID())
-      
+        pNode.SetParameter('subtractionLabelMap', self.__labelMap.GetID())
+
         # Get data from the volume
         #i = self.__subtractedVolume.GetImageData()
         #a = vtk.util.numpy_support.vtk_to_numpy(i.GetPointData().GetScalars())
@@ -172,48 +182,6 @@ class QuantificationStep(MRIChangeDetectorStep):
 
     # 2. Create a volume with the differences
     self.__quantificationStatus.setText('Rendering volume...')
-
-    self.__vrLogic = None
-    self.__vrDisplayNode = None
-
-    self.__vrLogic = slicer.modules.volumerendering.logic() # createUserInterface
-
-    # create VR node first time a valid ROI is selected (onROIChanged)
-    if self.__vrDisplayNode == None: # TODO: Delete or save
-      self.__vrDisplayNode = self.__vrLogic.CreateVolumeRenderingDisplayNode()
-      viewNode = slicer.util.getNode('vtkMRMLViewNode1')
-      self.__vrDisplayNode.SetCurrentVolumeMapper(0)
-      self.__vrDisplayNode.AddViewNodeID(viewNode.GetID())
-      
-      v = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('subtractedVolumeID'))
-      self.__vrDisplayNode.SetAndObserveVolumeNodeID(v.GetID())
-      self.__vrLogic.UpdateDisplayNodeFromVolumeNode(self.__vrDisplayNode, v)
-      self.__vrOpacityMap = self.__vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetScalarOpacity()
-      self.__vrColorMap = self.__vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetRGBTransferFunction()
-      
-      # setup color transfer function once
-      baselineROIRange = v.GetImageData().GetScalarRange()
-      self.__vrColorMap.RemoveAllPoints()
-      self.__vrColorMap.AddRGBPoint(0, 0, 0, 0)
-      self.__vrColorMap.AddRGBPoint(baselineROIRange[0]-1, 0, 0, 0) 
-      self.__vrColorMap.AddRGBPoint(baselineROIRange[0], 0.8, 0, 0) 
-      self.__vrColorMap.AddRGBPoint(baselineROIRange[1], 0.8, 0, 0) 
-      self.__vrColorMap.AddRGBPoint(baselineROIRange[1]+1, 0, 0, 0) 
-
-      self.__vrDisplayNode.VisibilityOn()
-
-      
-      low = self.__threshRange.minimumValue
-      high = self.__threshRange.maximumValue
-
-      threshRange = [low, high]
-      self.__vrOpacityMap.RemoveAllPoints()
-      self.__vrOpacityMap.AddPoint(0,0)
-      self.__vrOpacityMap.AddPoint(0,0)
-      self.__vrOpacityMap.AddPoint(threshRange[0]-1,0)
-      self.__vrOpacityMap.AddPoint(threshRange[0],1)
-      self.__vrOpacityMap.AddPoint(threshRange[1],1)
-      self.__vrOpacityMap.AddPoint(threshRange[1]+1,0)
 
             
     # close the progress window 
