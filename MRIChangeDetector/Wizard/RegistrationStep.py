@@ -37,7 +37,7 @@ class RegistrationStep(MRIChangeDetectorStep):
     registrationMethodLabel = qt.QLabel( 'Registration method:' )
 
     # Create the possible registration method labels
-    methods = ['Choose a method', 'Affine Registration', 'Demon Registration (BRAINS)', 'BSpline deformable registration', 'Fiducial Registration']
+    methods = ['Choose a method', 'Affine Registration', 'BSpline deformable registration', 'Demon Registration (BRAINS)']
 
     # Registration Methods Combo box
     self.__methodsComboBox = qt.QComboBox()
