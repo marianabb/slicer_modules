@@ -32,7 +32,9 @@ class MRIChangeDetectorWidget:
       self.parent.setMRMLScene(slicer.mrmlScene)
     else:
       self.parent = parent
+
     self.layout = self.parent.layout()
+
     if not parent:
       self.setup()
       self.parent.show()

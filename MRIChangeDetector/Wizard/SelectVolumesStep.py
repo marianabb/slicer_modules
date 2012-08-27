@@ -112,6 +112,8 @@ class SelectVolumesStep(MRIChangeDetectorStep):
     if goingTo.id() != 'Registration':
       return
 
+    
+
     # Nothing more because we already saved the volumes in pNode during validation
     super(SelectVolumesStep, self).onExit(goingTo, transitionType)
 
