@@ -71,10 +71,10 @@ int main(int argc, char ** argv) {
   imageCalculatorFilter->ComputeMaximum();
   imageCalculatorFilter->ComputeMinimum();
   
-  JacImageType::PixelType maxJacobian = imageCalculatorFilter->GetMaximum();
-  JacImageType::PixelType minJacobian = imageCalculatorFilter->GetMinimum();
-  std::cout << "Max Jacobian = " << maxJacobian << std::endl;
-  std::cout << "min Jacobian = " << minJacobian << std::endl;
+  JacImageType::PixelType maxJacobian = log(imageCalculatorFilter->GetMaximum()); //Added log
+  JacImageType::PixelType minJacobian = log(imageCalculatorFilter->GetMinimum()); //Added log
+  std::cout << "log(Max Jacobian) = " << maxJacobian << std::endl;
+  std::cout << "log(min Jacobian) = " << minJacobian << std::endl;
   // ---
 
   // Create the fixed image using the reader
@@ -104,9 +104,10 @@ int main(int argc, char ** argv) {
   OutImage->Allocate();
 
   // Calculate the range and the percentages we want to take
-  JacImageType::PixelType bound = (maxJacobian - minJacobian) * 0.2;
-  JacImageType::PixelType higher_bound = maxJacobian - bound;
-  JacImageType::PixelType lower_bound = minJacobian + bound;
+  JacImageType::PixelType h_bound = (maxJacobian - minJacobian) * 0.225;
+  JacImageType::PixelType l_bound = (maxJacobian - minJacobian) * 0.3;
+  JacImageType::PixelType higher_bound = maxJacobian - h_bound;
+  JacImageType::PixelType lower_bound = minJacobian + l_bound;
 
   // Iterate over the image and label according to the jacobian
   float jacDetSum = 0, nSegVoxels = 0;
@@ -118,15 +119,15 @@ int main(int argc, char ** argv) {
     ImageType::PixelType bPxl = bIt.Get();
     
     if(bPxl){
-      JacImageType::PixelType jPxl = jacImage->GetPixel(idx);
-      jacDetSum += jPxl;
+      JacImageType::PixelType jPxl = log(jacImage->GetPixel(idx)); //Added log
+      jacDetSum += jPxl; //TODO Do something with this
       nSegVoxels++;
       
-      if((jPxl > 1.1) && (jPxl >= higher_bound))
+      if((jPxl > 0.1) && (jPxl >= higher_bound))
         changesLabel->SetPixel(idx, 14); // Local Expansion, avery(pink) in labelMap
-      if((jPxl > 0.9) && (jPxl <= 1.1))
+      if((jPxl > -0.1) && (jPxl <= 0.1))
         changesLabel->SetPixel(idx, 0); // No change, or almost no change, Black in labelMap
-      if((jPxl < 0.9) && (jPxl <= lower_bound))
+      if((jPxl < -0.1) && (jPxl <= lower_bound))
         changesLabel->SetPixel(idx, 12); // Local Shrinking, elwood(green) in labelMap
 
       // Fill the output image with the jacobian values. 

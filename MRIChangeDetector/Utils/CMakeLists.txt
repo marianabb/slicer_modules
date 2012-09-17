@@ -1,1 +1,2 @@
 ADD_SUBDIRECTORY(IntensityNorm)
+#ADD_SUBDIRECTORY(FEMRegistration)
