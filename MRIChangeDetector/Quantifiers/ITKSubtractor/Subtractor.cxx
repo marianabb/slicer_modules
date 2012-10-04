@@ -2,6 +2,7 @@
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkAbsoluteValueDifferenceImageFilter.h"
+#include "itkRescaleIntensityImageFilter.h"
 
 #include "SubtractorCLP.h"
 
@@ -16,7 +17,7 @@ typedef itk::ImageFileReader< ImageType > ReaderType;
 typedef itk::ImageFileWriter< ImageType > WriterType;
 
 typedef itk::AbsoluteValueDifferenceImageFilter<ImageType, ImageType, ImageType> FilterType;
-
+typedef itk::RescaleIntensityImageFilter<ImageType, ImageType> RescaleFilterType;
 
 int main( int argc, char ** argv ) {
   
@@ -41,14 +42,21 @@ int main( int argc, char ** argv ) {
   FilterType::Pointer filter = FilterType::New();
   filter->SetInput1(reader1->GetOutput());
   filter->SetInput2(reader2->GetOutput());
-  
+
+  // Rescale the output volume intensities between 0 and 255
+  RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
+  rescaleFilter->SetInput(filter->GetOutput());  
+  rescaleFilter->SetOutputMinimum(0);
+  rescaleFilter->SetOutputMaximum(255);
+
 
   // Create a writer for the output
   WriterType::Pointer writer = WriterType::New();
   writer->SetFileName(outputVolume.c_str());
   
   // Fill in the writer
-  writer->SetInput(filter->GetOutput());
+  //  writer->SetInput(filter->GetOutput());
+  writer->SetInput(rescaleFilter->GetOutput());
   writer->SetUseCompression(1);
   writer->Update();
 

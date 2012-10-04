@@ -1,20 +1,19 @@
 from __main__ import qt, ctk, vtk, slicer
 
-from MRIChangeDetectorStep import *
+from TMRIChangeDetectorStep import *
 
 
-class QuantificationStep(MRIChangeDetectorStep):
+class QuantificationStep(TMRIChangeDetectorStep):
   def __init__(self, stepid):
     self.initialize(stepid)
     self.setName( '3. Quantify and show the differences' )
-    self.setDescription( 'Find small differences between the baseline and follow-up volumes.' )
+    self.setDescription( 'Find differences between the baseline and follow-up volumes according to the deformation field.' )
     
     self.__parent = super(QuantificationStep, self)
 
-    # Volume generated when the registered and the original volume are subtracted
-    #self.__subtractedVolume = None
-    # Label map from the subtracted volume
+    # Label map from the Jacobians of the deformation field
     self.__outputLabelM = None
+    self.__outputVolume = None
 
     qt.QTimer.singleShot(0, self.killButton)
 
@@ -41,9 +40,9 @@ class QuantificationStep(MRIChangeDetectorStep):
 
 
     # Quantification button
-    self.__quantificationButton = qt.QPushButton("Run quantification")
+    self.__quantificationButton = qt.QPushButton("Run tensor measurements")
     self.__quantificationButton.toolTip = "Measure the differences between baseline and follow-up volumes."
-    self.__quantificationStatus = qt.QLabel('Quantification Status: N/A')
+    self.__quantificationStatus = qt.QLabel('Measurement Status: N/A')
 
     self.__layout.addRow(self.__quantificationButton)
     self.__layout.addRow("", qt.QWidget()) # empty row
@@ -81,7 +80,7 @@ class QuantificationStep(MRIChangeDetectorStep):
     '''
     Update the widget according to the parameters selected by the user
     '''
-    pass #TODO: Delete if useless
+    pass
 
 
   def validate(self, desiredBranchId):
@@ -94,7 +93,7 @@ class QuantificationStep(MRIChangeDetectorStep):
   def onQuantificationRequest(self):
     # TODO: Validate inputs? (there are no inputs so far)
     
-    self.__quantificationStatus.setText('Quantification status: Running...')
+    self.__quantificationStatus.setText('Measurement status: Running...')
 
     # pop up progress dialog to prevent user from messing around
     self.progress = qt.QProgressDialog(slicer.util.mainWindow())
@@ -105,67 +104,73 @@ class QuantificationStep(MRIChangeDetectorStep):
     self.progress.setCancelButton(0)
     self.progress.setWindowModality(2)
  
-    self.progress.setLabelText('Subtracting baseline volume and registered follow-up volume...')
+    self.progress.setLabelText('Calculating Jacobian determinants...')
     slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
     self.progress.repaint()
 
     pNode = self.parameterNode()
 
     
-    # 1. Subtract baseline and registered volumes. Result in self.__subtractedVolume
+    # 1. Calculate Jacobian determinants and use the. Result in self.__outputLabelM
     # Only subtract if I haven't done it before
-    if pNode.GetParameter('subtractedVolumeID') == '':
-      self.__quantificationStatus.setText('Subtracting volumes...')
+    if pNode.GetParameter('jacobianLabelMapID') == '':
+      self.__quantificationStatus.setText('Measuring deformation field...')
       self.__quantificationButton.setEnabled(0)
 
       # Obtain inputs
       baselineVolumeID = pNode.GetParameter('baselineVolumeID')
-      registeredVolumeID = pNode.GetParameter('registeredVolumeID')
+      registeredTransformID = pNode.GetParameter('registeredTransformID')
     
       # Fill in the parameters
       parameters = {}
-      parameters["inputVolume1"] = baselineVolumeID
-      parameters["inputVolume2"] = registeredVolumeID
+      parameters["fixedVolume"] = baselineVolumeID
+      parameters["deformationField"] = registeredTransformID
     
       # Create an output labelMap
       vl = slicer.modules.volumes.logic()
       baselineVolume = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('baselineVolumeID'))
-      self.__outputLabelM = vl.CreateLabelVolume(slicer.mrmlScene, baselineVolume, 'subtracted_labelMap')
-      parameters["outputVolume"] = self.__outputLabelM.GetID()
+      self.__outputLabelM = vl.CreateLabelVolume(slicer.mrmlScene, baselineVolume, 'jacobianLabelMap')
+      parameters["outputLabelMap"] = self.__outputLabelM.GetID()
 
+      # Create an output volume
+      vl = slicer.modules.volumes.logic()
+      baselinevolume = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('baselineVolumeID'))
+      self.__outputVolume = vl.CreateLabelVolume(slicer.mrmlScene, baselineVolume, 'jacobianVolume')
+      parameters["outputVolume"] = self.__outputVolume.GetID()
 
       # Obtain the module from the moduleManager
       moduleManager = slicer.app.moduleManager()
-      subtractmodule = Modulemanager.module('Subtractor')
+      tensorModule = moduleManager.module('Tensor')
       
       # Call the module
       self.__cliNode = None
-      self.__cliNode = slicer.cli.run(subtractmodule, self.__cliNode, parameters, wait_for_completion = True)
+      self.__cliNode = slicer.cli.run(tensorModule, self.__cliNode, parameters, wait_for_completion = True)
 
       status = self.__cliNode.GetStatusString()
       if status == 'Completed':
-        self.__quantificationStatus.setText('Subtract status: '+status)
+        self.__quantificationStatus.setText('Measurement status: '+status)
 
         # update the progress window 
         self.progress.setValue(2)
-        self.progress.setLabelText('Subtraction Done. Creating LabelMap...')
+        self.progress.setLabelText('Measurement Done. Creating LabelMap...')
         slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
         self.progress.repaint()
-        
-        # Change color of the volume to something brighter
-        #labelsColorNode = slicer.modules.colors.logic().GetColorTableNodeID(20) # ColorTable Magenta
-        #self.__outputLabelM.GetDisplayNode().SetAndObserveColorNodeID(labelsColorNode)
-
-        # Using it directly because of a bug in Slicer 4.1.0
-        self.__outputLabelM.GetDisplayNode().SetAndObserveColorNodeID('vtkMRMLPETProceduralColorNodePET-Heat') # PET-Heat
      
-        # Save result in pNode
+        # Change color of the labelMap to Labels
+        labelsColorNode = slicer.modules.colors.logic().GetColorTableNodeID(10) # ColorTable Labels
+        self.__outputLabelM.GetDisplayNode().SetAndObserveColorNodeID(labelsColorNode)
+             
+        # Save results in pNode
         pNode = self.parameterNode()
-        pNode.SetParameter('subtractionLabelMap', self.__outputLabelM.GetID())
+        pNode.SetParameter('jacobianLabelMapID', self.__outputLabelM.GetID())
+        pNode.SetParameter('outputVolumeID', self.__outputVolume.GetID())
 
+        # Place the useful things in Bg and Fg
+        self.setBgFgVolumes(pNode.GetParameter('baselineVolumeID'), pNode.GetParameter('jacobianLabelMapID'))
+        
 
       elif status == 'CompletedWithErrors' or status == 'Idle':
-        self.__quantificationStatus.setText('Subtract status: '+status)
+        self.__quantificationStatus.setText('Measurement status: '+status)
         self.__quantificationButton.setEnabled(1)
       
         # close the progress window 
@@ -185,5 +190,13 @@ class QuantificationStep(MRIChangeDetectorStep):
     
     # Enable the button again
     self.__quantificationButton.setEnabled(1)
-    self.__quantificationStatus.setText('Quantification status: Done. LabelMap created.')
+    self.__quantificationStatus.setText('Measurement status: Done. LabelMap created.')
  
+
+
+  def setBgFgVolumes(self, bg, fg):
+    appLogic = slicer.app.applicationLogic()
+    selectionNode = appLogic.GetSelectionNode()
+    selectionNode.SetReferenceActiveVolumeID(bg)
+    selectionNode.SetReferenceSecondaryVolumeID(fg)
+    appLogic.PropagateVolumeSelection()

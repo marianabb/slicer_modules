@@ -1,0 +1,15 @@
+;; Object WarpVolume/
+;; SEMANTICDB Tags save file
+(semanticdb-project-database-file "WarpVolume/"
+  :tables (list 
+   (semanticdb-table "WarpVolume.cxx"
+    :major-mode 'c++-mode
+    :tags '(("itkImage.h" include nil (dependency-file none) [1 22]) ("itkImageFileReader.h" include nil (dependency-file none) [23 54]) ("itkImageFileWriter.h" include nil (dependency-file none) [55 86]) ("itkWarpImageFilter.h" include nil (dependency-file none) [87 118]) ("WarpVolumeCLP.h" include nil (dependency-file none) [166 192]) ("PixelType" type (:typedef ("float") :superclasses "float" :type "typedef") nil [194 218]) ("OutPixelType" type (:typedef ("float") :superclasses "float" :type "typedef") nil [219 246]) ("Dimension" variable (:constant-flag t :default-value "3" :type "unsigned int") nil [247 280]) ("ImageType" type (:typedef ("itk::Image" type (:type "class") nil nil) :superclasses "itk::Image" :type "typedef") nil [282 335]) ("OutImageType" type (:typedef ("itk::Image" type (:type "class") nil nil) :superclasses "itk::Image" :type "typedef") nil [336 395]) ("VectorComponentType" type (:typedef ("float") :superclasses "float" :type "typedef") nil [397 431]) ("VectorType" type (:typedef ("itk::Vector" type (:type "class") nil nil) :superclasses "itk::Vector" :type "typedef") nil [432 500]) ("DFImageType" type (:typedef ("itk::Image" type (:type "class") nil nil) :superclasses "itk::Image" :type "typedef") nil [501 560]) ("ReaderType" type (:typedef ("itk::ImageFileReader" type (:type "class") nil nil) :superclasses "itk::ImageFileReader" :type "typedef") nil [562 615]) ("DFReaderType" type (:typedef ("itk::ImageFileReader" type (:type "class") nil nil) :superclasses "itk::ImageFileReader" :type "typedef") nil [616 673]) ("WriterType" type (:typedef ("itk::ImageFileWriter" type (:type "class") nil nil) :superclasses "itk::ImageFileWriter" :type "typedef") nil [674 727]) ("OutWriterType" type (:typedef ("itk::ImageFileWriter" type (:type "class") nil nil) :superclasses "itk::ImageFileWriter" :type "typedef") nil [728 787]) ("WarpFilterType" type (:typedef ("itk::WarpImageFilter" type (:type "class") nil nil) :superclasses "itk::WarpImageFilter" :type "typedef") nil [881 963]) ("main" function (:arguments (("argc" variable (:type "int") (reparse-symbol arg-sub-list) [974 983]) ("argv" variable (:pointer 2 :type "char") (reparse-symbol arg-sub-list) [984 997])) :type "int") nil [965 2373]))
+    :file "WarpVolume.cxx"
+    :pointmax 2375
+    )
+   )
+  :file "semantic.cache"
+  :semantic-tag-version "2.0pre4"
+  :semanticdb-version "2.0pre4"
+  )

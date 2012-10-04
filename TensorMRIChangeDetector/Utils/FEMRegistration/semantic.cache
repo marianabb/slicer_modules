@@ -1,0 +1,15 @@
+;; Object FEMRegistration/
+;; SEMANTICDB Tags save file
+(semanticdb-project-database-file "FEMRegistration/"
+  :tables (list 
+   (semanticdb-table "FEMRegistration.cxx"
+    :major-mode 'c++-mode
+    :tags '(("itkImage.h" include nil (dependency-file none) [1 22]) ("itkImageFileReader.h" include nil (dependency-file none) [23 54]) ("itkImageFileWriter.h" include nil (dependency-file none) [55 86]) ("itkRescaleIntensityImageFilter.h" include nil (dependency-file none) [88 131]) ("itkHistogramMatchingImageFilter.h" include nil (dependency-file none) [132 176]) ("itkFEMRegistrationFilter.h" include nil (dependency-file none) [177 214]) ("FEMRegistrationCLP.h" include nil (dependency-file none) [216 247]) ("PixelType" type (:typedef ("char") :superclasses "char" :type "typedef") nil [249 272]) ("OutPixelType" type (:typedef ("float") :superclasses "float" :type "typedef") nil [273 300]) ("Dimension" variable (:constant-flag t :default-value "3" :type "unsigned int") nil [301 334]) ("FEMObjectType" type (:typedef ("itk::fem::FEMObject" type (:type "class") nil nil) :superclasses "itk::fem::FEMObject" :type "typedef") nil [335 388]) ("ImageType" type (:typedef ("itk::Image" type (:type "class") nil nil) :superclasses "itk::Image" :type "typedef") nil [389 443]) ("OutImageType" type (:typedef ("itk::Image" type (:type "class") nil nil) :superclasses "itk::Image" :type "typedef") nil [458 515]) ("ElementType" type (:typedef ("itk::fem::Element3DC0LinearHexahedronMembrane" type (:type "class") nil nil) :superclasses "itk::fem::Element3DC0LinearHexahedronMembrane" :type "typedef") nil [516 582]) ("ReaderType" type (:typedef ("itk::ImageFileReader" type (:type "class") nil nil) :superclasses "itk::ImageFileReader" :type "typedef") nil [584 637]) ("WriterType" type (:typedef ("itk::ImageFileWriter" type (:type "class") nil nil) :superclasses "itk::ImageFileWriter" :type "typedef") nil [638 691]) ("OutWriterType" type (:typedef ("itk::ImageFileWriter" type (:type "class") nil nil) :superclasses "itk::ImageFileWriter" :type "typedef") nil [692 751]) ("RegistrationType" type (:typedef ("itk::fem::FEMRegistrationFilter" type (:type "class") nil nil) :superclasses "itk::fem::FEMRegistrationFilter" :type "typedef") nil [752 850]) ("main" function (:arguments (("argc" variable (:type "int") (reparse-symbol arg-sub-list) [862 871]) ("argv" variable (:pointer 2 :type "char") (reparse-symbol arg-sub-list) [872 885])) :type "int") nil [853 7494]))
+    :file "FEMRegistration.cxx"
+    :pointmax 7495
+    )
+   )
+  :file "semantic.cache"
+  :semantic-tag-version "2.0pre4"
+  :semanticdb-version "2.0pre4"
+  )

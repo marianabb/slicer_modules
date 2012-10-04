@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>
+    ITKMariana
+  </category>
+  <title>
+    FEMRegistration
+  </title>
+  <description>
+    Finite element method registration.
+  </description>
+  <version>0.1</version>
+  <documentation-url></documentation-url>
+  <license></license>
+  <contributor>Mariana Bustamante</contributor>
+<acknowledgements>
+</acknowledgements>
+
+  <parameters>
+    <label>IO</label>
+    <description>Input/output parameters</description>
+    <image>
+      <name>fixedVolume</name>
+      <label>Fixed Volume</label>
+      <channel>input</channel>
+      <index>0</index>
+      <description>Fixed volume during the registration</description>
+    </image>
+    <image>
+      <name>movingVolume</name>
+      <label>Moving Volume</label>
+      <channel>input</channel>
+      <index>1</index>
+      <description>Moving volume during the registration</description>
+    </image>
+
+    <image type="vector">
+      <name>deformationField</name>
+      <label>Deformation Field</label>
+      <channel>output</channel>
+      <index>2</index>
+      <description>Deformation field resulting from FEMRegistration</description>
+    </image>
+
+    <image>
+      <name>outputVolume</name>
+      <label>Output Volume</label>
+      <channel>output</channel>
+      <index>3</index>
+      <description>Output volume after registration</description>
+    </image>
+
+
+  </parameters>
+
+</executable>

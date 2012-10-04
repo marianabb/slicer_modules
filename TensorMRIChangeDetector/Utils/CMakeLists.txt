@@ -1,3 +1,2 @@
-ADD_SUBDIRECTORY(IntensityNorm)
 ADD_SUBDIRECTORY(WarpVolume)
 #ADD_SUBDIRECTORY(FEMRegistration)
