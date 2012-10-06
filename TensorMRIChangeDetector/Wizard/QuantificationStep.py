@@ -25,17 +25,22 @@ class QuantificationStep(TMRIChangeDetectorStep):
 
     self.__layout = self.__parent.createUserInterface()
 
-    # Threshold range widget
-#    threshLabel = qt.QLabel('Choose threshold:')
-#     self.__threshRange = slicer.qMRMLRangeWidget()
-#     self.__threshRange.decimals = 0
-#     self.__threshRange.singleStep = 1
-#     self.__threshRange.maximum = 255.0
-#     self.__threshRange.minimumValue = 60
-#     self.__threshRange.maximumValue = 255
+    jacMinLabel = qt.QLabel('Choose the percentage of shrinkage to show in the output (green):')
 
-#     self.__layout.addRow(threshLabel)
-#     self.__layout.addRow(self.__threshRange)
+    # MinJac SpinBox
+    self.__minBox = qt.QDoubleSpinBox()
+    self.__minBox.setValue(50.0) #Default min percentage
+    self.__layout.addRow(jacMinLabel)
+    self.__layout.addRow(self.__minBox)
+    self.__layout.addRow("", qt.QWidget()) # empty row
+    
+    jacMaxLabel = qt.QLabel('Choose the percentage of growth to show in the output (pink):')
+
+    # MaxJac SpinBox
+    self.__maxBox = qt.QDoubleSpinBox()
+    self.__maxBox.setValue(60.0) #Default max percentage
+    self.__layout.addRow(jacMaxLabel)
+    self.__layout.addRow(self.__maxBox)
     self.__layout.addRow("", qt.QWidget()) # empty row
 
 
@@ -91,7 +96,7 @@ class QuantificationStep(TMRIChangeDetectorStep):
     
 
   def onQuantificationRequest(self):
-    # TODO: Validate inputs? (there are no inputs so far)
+    # No validation of inputs since the percentages are checked by the QDoubleSpinBox(es)
     
     self.__quantificationStatus.setText('Measurement status: Running...')
 
@@ -113,72 +118,67 @@ class QuantificationStep(TMRIChangeDetectorStep):
     
     # 1. Calculate Jacobian determinants and use the. Result in self.__outputLabelM
     # Only subtract if I haven't done it before
-    if pNode.GetParameter('jacobianLabelMapID') == '':
-      self.__quantificationStatus.setText('Measuring deformation field...')
-      self.__quantificationButton.setEnabled(0)
+    #if pNode.GetParameter('jacobianLabelMapID') == '':
+    self.__quantificationStatus.setText('Measuring deformation field...')
+    self.__quantificationButton.setEnabled(0)
 
       # Obtain inputs
-      baselineVolumeID = pNode.GetParameter('baselineVolumeID')
-      registeredTransformID = pNode.GetParameter('registeredTransformID')
+    baselineVolumeID = pNode.GetParameter('baselineVolumeID')
+    registeredTransformID = pNode.GetParameter('registeredTransformID')
     
       # Fill in the parameters
-      parameters = {}
-      parameters["fixedVolume"] = baselineVolumeID
-      parameters["deformationField"] = registeredTransformID
+    parameters = {}
+    parameters["fixedVolume"] = baselineVolumeID
+    parameters["deformationField"] = registeredTransformID
+    parameters["minJac"] = self.__minBox.value
+    parameters["maxJac"] = self.__maxBox.value
     
       # Create an output labelMap
-      vl = slicer.modules.volumes.logic()
-      baselineVolume = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('baselineVolumeID'))
-      self.__outputLabelM = vl.CreateLabelVolume(slicer.mrmlScene, baselineVolume, 'jacobianLabelMap')
-      parameters["outputLabelMap"] = self.__outputLabelM.GetID()
+    vl = slicer.modules.volumes.logic()
+    baselineVolume = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('baselineVolumeID'))
+    self.__outputLabelM = vl.CreateLabelVolume(slicer.mrmlScene, baselineVolume, 'jacobianLabelMap')
+    parameters["outputLabelMap"] = self.__outputLabelM.GetID()
+    
+    # Create an output volume
+    vl = slicer.modules.volumes.logic()
+    baselinevolume = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('baselineVolumeID'))
+    self.__outputVolume = vl.CloneVolume(slicer.mrmlScene, baselineVolume, 'jacobianVolume')
+    parameters["outputVolume"] = self.__outputVolume.GetID()
+    
+    # Obtain the module from the moduleManager
+    moduleManager = slicer.app.moduleManager()
+    tensorModule = moduleManager.module('Tensor')
+    
+    # Call the module
+    self.__cliNode = None
+    self.__cliNode = slicer.cli.run(tensorModule, self.__cliNode, parameters, wait_for_completion = True)
 
-      # Create an output volume
-      vl = slicer.modules.volumes.logic()
-      baselinevolume = slicer.mrmlScene.GetNodeByID(pNode.GetParameter('baselineVolumeID'))
-      self.__outputVolume = vl.CreateLabelVolume(slicer.mrmlScene, baselineVolume, 'jacobianVolume')
-      parameters["outputVolume"] = self.__outputVolume.GetID()
-
-      # Obtain the module from the moduleManager
-      moduleManager = slicer.app.moduleManager()
-      tensorModule = moduleManager.module('Tensor')
+    status = self.__cliNode.GetStatusString()
+    if status == 'Completed':
+      self.__quantificationStatus.setText('Measurement status: '+status)
       
-      # Call the module
-      self.__cliNode = None
-      self.__cliNode = slicer.cli.run(tensorModule, self.__cliNode, parameters, wait_for_completion = True)
-
-      status = self.__cliNode.GetStatusString()
-      if status == 'Completed':
-        self.__quantificationStatus.setText('Measurement status: '+status)
-
-        # update the progress window 
-        self.progress.setValue(2)
-        self.progress.setLabelText('Measurement Done. Creating LabelMap...')
-        slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
-        self.progress.repaint()
-     
-        # Change color of the labelMap to Labels
-        labelsColorNode = slicer.modules.colors.logic().GetColorTableNodeID(10) # ColorTable Labels
-        self.__outputLabelM.GetDisplayNode().SetAndObserveColorNodeID(labelsColorNode)
-             
-        # Save results in pNode
-        pNode = self.parameterNode()
-        pNode.SetParameter('jacobianLabelMapID', self.__outputLabelM.GetID())
-        pNode.SetParameter('outputVolumeID', self.__outputVolume.GetID())
-
-        # Place the useful things in Bg and Fg
-        self.setBgFgVolumes(pNode.GetParameter('baselineVolumeID'), pNode.GetParameter('jacobianLabelMapID'))
+      # update the progress window 
+      self.progress.setValue(2)
+      self.progress.setLabelText('Measurement Done. Creating LabelMap...')
+      slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
+      self.progress.repaint()
+      
+      # Change color of the labelMap to Labels
+      labelsColorNode = slicer.modules.colors.logic().GetColorTableNodeID(10) # ColorTable Labels
+      self.__outputLabelM.GetDisplayNode().SetAndObserveColorNodeID(labelsColorNode)
+      
+      # Save results in pNode
+      pNode = self.parameterNode()
+      pNode.SetParameter('jacobianLabelMapID', self.__outputLabelM.GetID())
+      pNode.SetParameter('outputVolumeID', self.__outputVolume.GetID())
+      
+      # Place the useful things in Bg and Fg
+      self.setBgFgVolumes(pNode.GetParameter('baselineVolumeID'), pNode.GetParameter('outputVolumeID'))
         
 
-      elif status == 'CompletedWithErrors' or status == 'Idle':
-        self.__quantificationStatus.setText('Measurement status: '+status)
-        self.__quantificationButton.setEnabled(1)
-      
-        # close the progress window 
-        self.progress.setValue(3)
-        self.progress.repaint()
-        slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
-        self.progress.close() #TODO: Think this case further
-        self.progress = None
+    elif status == 'CompletedWithErrors' or status == 'Idle':
+      self.__quantificationStatus.setText('Measurement status: '+status)
+      self.__quantificationButton.setEnabled(1)
 
          
     # close the progress window 

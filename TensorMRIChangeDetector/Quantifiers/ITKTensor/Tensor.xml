@@ -35,11 +35,39 @@
       <description>Deformation field resulting from BRAINSDemonWarp registration</description>
     </image>
 
+    <double>
+      <name>minJac</name>
+      <label>Minimum Jacobian</label>
+      <channel>input</channel>
+      <index>2</index>
+      <description>Percentage of the minimum Jacobian that will be shown in the output.</description>
+      <default>30.0</default>
+      <constraints>
+        <minimum>0.0</minimum>
+        <maximum>100.0</maximum>
+        <step>1.0</step>
+      </constraints>
+    </double>
+    
+    <double>
+      <name>maxJac</name>
+      <label>Maximum Jacobian</label>
+      <channel>input</channel>
+      <index>3</index>
+      <description>Percentage of the maximum Jacobian that will be shown in the output.</description>
+      <default>22.5</default>
+      <constraints>
+        <minimum>0.0</minimum>
+        <maximum>100.0</maximum>
+        <step>1.0</step>
+      </constraints>
+    </double>
+
     <image type="label">
       <name>outputLabelMap</name>
       <label>Output LabelMap</label>
       <channel>output</channel>
-      <index>2</index>
+      <index>4</index>
       <description>Output Label map to show growth and shrinkage</description>
     </image>
 
@@ -47,7 +75,7 @@
       <name>outputVolume</name>
       <label>Output Volume</label>
       <channel>output</channel>
-      <index>3</index>
+      <index>5</index>
       <description>Output volume to show the differences</description>
     </image>
 

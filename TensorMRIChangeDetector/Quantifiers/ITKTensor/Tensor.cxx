@@ -75,6 +75,8 @@ int main(int argc, char ** argv) {
   JacImageType::PixelType minJacobian = log(imageCalculatorFilter->GetMinimum()); //Added log
   std::cout << "log(Max Jacobian) = " << maxJacobian << std::endl;
   std::cout << "log(min Jacobian) = " << minJacobian << std::endl;
+  std::cout << "minPercentage = " << minJac << std::endl;
+  std::cout << "maxPercentage = " << maxJac << std::endl;
   // ---
 
   // Create the fixed image using the reader
@@ -104,11 +106,11 @@ int main(int argc, char ** argv) {
   OutImage->Allocate();
 
   // Calculate the range and the percentages we want to take
-  JacImageType::PixelType h_bound = abs(maxJacobian - minJacobian) * 0.44;//0.3642; //0.225;
-  JacImageType::PixelType l_bound = abs(maxJacobian - minJacobian) * 0.4453;
-  JacImageType::PixelType higher_bound = maxJacobian - h_bound;
-  JacImageType::PixelType lower_bound = minJacobian + l_bound;
-
+  JacImageType::PixelType h_bound = (100.0 - maxJac)/100.0; // Percentage of growth the user want to see
+  JacImageType::PixelType l_bound = (100.0 - minJac)/100.0; // Percentage of shrinkage the user wants to see
+  JacImageType::PixelType higher_bound = h_bound * maxJacobian; // Actual value of the Jacobian according to h_bound
+  JacImageType::PixelType lower_bound = l_bound * minJacobian; // Actual value of the Jacobian according to l_bound
+  
   // Iterate over the image and label according to the jacobian
   float jacDetSum = 0, nSegVoxels = 0;
   IteratorType bIt(fixedImage, fixedImage->GetBufferedRegion());

@@ -136,7 +136,7 @@ class QuantificationStep(MRIChangeDetectorStep):
 
       # Obtain the module from the moduleManager
       moduleManager = slicer.app.moduleManager()
-      subtractmodule = Modulemanager.module('Subtractor')
+      subtractmodule = moduleManager.module('Subtractor')
       
       # Call the module
       self.__cliNode = None
