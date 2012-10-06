@@ -1,1 +1,4 @@
-New modules created for Slicer4 for my thesis.
+Two new modules created for 3D Slicer4.1 for my thesis.
+- MRIChangeDetector: Detects changes using voxel-based morphometry.
+- TensorMRIChangeDetector: Detects changes using tensor-based morphometry.
+
